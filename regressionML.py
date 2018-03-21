@@ -9,10 +9,10 @@ def setupData(max=1000):
     col_names=('gender', 'age_range', 'head_size', 'brain_weight')
     col_widths=[(8,8),(16,16),(21-24),(29-32)]
     df=pandas.read_fwf(io.StringIO(data.text), names=col_names, colspec=col_widths)
-    print (df.head(10))
+    print (df.head(5))
     return df.head(max)
 
-# iterate series
+# iterator for series
 def costP(func, x, testData):
     n = 0
     print('test data size: ',len(testData))
@@ -20,62 +20,61 @@ def costP(func, x, testData):
         n += (as_int(func.subs(x,d.head_size)) - d.brain_weight)**2
     return n * (1.0/len(testData))
 
-# make function f, and error sq function
+# make function f, and error sq function e
 def makeFuncs():
     A,B,x,y = sp.symbols('A B x y')
     f = A*x + B  # linear func y=mx+b
     errorF = (f - y)**2
     return f, errorF
 
-# evaluates e with x,y substitutions
-def calcF(e,x,y): 
-    return e.subs(sp.symbols('x'),x).subs(sp.symbols('y'),y)
-
 # evaluate/calculate e with data for x and y
 def sumCalcF(e,testData):
     n=0
     for _,d in testData.iterrows():  # global test data
-#        n += calcF(e, d.head_size,d.brain_weight)
         n += e.subs(sp.symbols('x'),d.head_size).subs(sp.symbols('y'),d.brain_weight)
     return n * (1.0/len(testData))
 
+# generate partial derivative of e, with respect to v, for testData (x,y) and evaluate
 def partialDeriv(e,testData,v,guessV,o,guessO):
     p = sp.diff(e,v)
     pc = sumCalcF(p,testData)
     pceval = pc.subs(v,guessV).subs(o,guessO)
-    print ('p:pc:pceval',v,p,pc,pceval)
+    print ('v,p,pc:pceval',v,guessV,p,pc,pceval)
     return pceval
 
+# solver, start w/ guess, solve cost, iterate cost+/-partialDerivs
 def grad_descent2():
-    guessA = 0.40
-    guessB = 300.0   # h(x) = Ax+B = x+1
+    guessA = 1.0
+    guessB = 100.0   
     testData = setupData()
-    step = 0.00000001
-    step_limit = 0.01 # when to stop, when stops changing
+    step = 0.00000004
+    step_limit = 0.0001 # when to stop, when stops changing
     changeA = changeB = 1.0  # initial guess 1,1 or y=x+1
+    ccChange = 1
 
     A,B = sp.symbols('A B')
-    f, e = makeFuncs()
-    c = sumCalcF(e,testData)
-    cc = c.subs(A,guessA).subs(B,guessB)
+    f, e = makeFuncs()  # make error = (Ax+B - y)^2
+    c = sumCalcF(e,testData)  # cost fun evaluted for testData
+    cc = c.subs(A,guessA).subs(B,guessB)  # cost evaluted for A B guess
     print('init cost',cc)
 
-    z=0
+    i=0
     #for each x in the training set:
-    while (abs(changeA) > step_limit) or (abs(changeB) > step_limit):
+#    while (abs(changeA) > step_limit) or (abs(changeB) > step_limit):
+#    while (abs(ccChange) > step_limit):
+    while(i<5000):
         pda = partialDeriv(e,testData,A,guessA,B,guessB)
         pdb = partialDeriv(e,testData,B,guessB,A,guessA)
-        print ('pda/pdb',pda,pdb)
         changeA = step * pda
         changeB = step * pdb
         guessA = guessA - changeA
         guessB = guessB - changeB
+        previousCC = cc
         cc = c.subs(A,guessA).subs(B,guessB)
-        print ('A,B', guessA, guessB, changeA, changeB)
-        print ('     iter cost',cc)
-#        z=z+1
-#        if (z > 20):  #stop at 20 for now
-#           return guessA,guessB
+        ccChange = previousCC-cc
+        print ('A,B,-A,-B', guessA, guessB, changeA, changeB)
+        print ('     current loop/cost',i,cc)
+        i=i+1
     return guessA,guessB
 
 def test():
