@@ -9,7 +9,7 @@ def setupData(max=1000):
     col_names=('gender', 'age_range', 'head_size', 'brain_weight')
     col_widths=[(8,8),(16,16),(21-24),(29-32)]
     df=pandas.read_fwf(io.StringIO(data.text), names=col_names, colspec=col_widths)
-    print (df.head(max))
+    print (df.head(10))
     return df.head(max)
 
 # iterate series
@@ -20,114 +20,75 @@ def costP(func, x, testData):
         n += (as_int(func.subs(x,d.head_size)) - d.brain_weight)**2
     return n * (1.0/len(testData))
 
-# non interative using series summation (can't iterate on i - dead)
-def makeFuncs(xarr, yarr):
-    n = len(xarr)
-    A,B,x,f,costF,i,n = sp.symbols('A B x f costF i n')
-    f = A*x + B  # line func
-    costF = 1.0/n * (sum.summation((f.subs(x,xarr[1])-yarr[1])**2,(i,0,n-1)))  #can't input array[i]
-    return f, costF
-
-def makeFuncs2():
-    A,B,x,f,costF,i,n,y = sp.symbols('A B x f costF i n y')
-    f = A*x + B  # line func
+# make function f, and error sq function
+def makeFuncs():
+    A,B,x,y = sp.symbols('A B x y')
+    f = A*x + B  # linear func y=mx+b
     errorF = (f - y)**2
     return f, errorF
 
-def costF(e,x,y):
+# evaluates e with x,y substitutions
+def calcF(e,x,y): 
     return e.subs(sp.symbols('x'),x).subs(sp.symbols('y'),y)
 
-def sumCostF(e,testData):
+# evaluate/calculate e with data for x and y
+def sumCalcF(e,testData):
     n=0
     for _,d in testData.iterrows():  # global test data
-        n += costF(e, d.head_size,d.brain_weight)
+#        n += calcF(e, d.head_size,d.brain_weight)
+        n += e.subs(sp.symbols('x'),d.head_size).subs(sp.symbols('y'),d.brain_weight)
     return n * (1.0/len(testData))
 
-def derivF(c,v):
-    return sp.diff(c,v)
-
-xarr,yarr = ([1,2,3,4],[2,4,6,8])
-f,e = makeFuncs2()
-sc = sumCostF(e,setupData(5))
-print (f,e)
-print ('full cost expansion: ', sc)
-print ('partial A',derivF(sc,sp.symbols('A')))
-print ('partial B',derivF(sc,sp.symbols('B')))
-print ('done')
+def partialDeriv(e,testData,v,guessV,o,guessO):
+    p = sp.diff(e,v)
+    pc = sumCalcF(p,testData)
+    pceval = pc.subs(v,guessV).subs(o,guessO)
+    print ('p:pc:pceval',v,p,pc,pceval)
+    return pceval
 
 def grad_descent2():
-    guessA = guessB = 1   # h(x) = Ax+B = x+1
-    testData = setupData(5)
-    step = 0.05
-    step_limit = 0.01 # when to stop
-    changeA = changeB = 1
+    guessA = 0.40
+    guessB = 300.0   # h(x) = Ax+B = x+1
+    testData = setupData()
+    step = 0.00000001
+    step_limit = 0.01 # when to stop, when stops changing
+    changeA = changeB = 1.0  # initial guess 1,1 or y=x+1
 
-    f, c = makeFuncs([1,2,3,4],[2,4,6,8]) #replace w/ testData X|Y
+    A,B = sp.symbols('A B')
+    f, e = makeFuncs()
+    c = sumCalcF(e,testData)
+    cc = c.subs(A,guessA).subs(B,guessB)
+    print('init cost',cc)
 
-    f.subs(A, guessA) # f = ?
-    f.subs(B, guessB)
-    print('f',f)
-    print('cost ',c)
-    
+    z=0
     #for each x in the training set:
-    while (changeA < step_limit) and (changeB < step_limit):
-        changeA = step * sp.diff(c,A)
-        changeB = step * sp.diff(c,B)
+    while (abs(changeA) > step_limit) or (abs(changeB) > step_limit):
+        pda = partialDeriv(e,testData,A,guessA,B,guessB)
+        pdb = partialDeriv(e,testData,B,guessB,A,guessA)
+        print ('pda/pdb',pda,pdb)
+        changeA = step * pda
+        changeB = step * pdb
         guessA = guessA - changeA
         guessB = guessB - changeB
-        print (guessA, guessB)
+        cc = c.subs(A,guessA).subs(B,guessB)
+        print ('A,B', guessA, guessB, changeA, changeB)
+        print ('     iter cost',cc)
+#        z=z+1
+#        if (z > 20):  #stop at 20 for now
+#           return guessA,guessB
     return guessA,guessB
 
 def test():
-    guessA = guessB = 1   # h(x) = Ax+B = x+1
-    testData = setup()
+    xarr,yarr = ([1,2,3,4],[2,4,6,8])
+    f,e = makeFuncs()
+    sc = sumCalcF(e,setupData(5))
+    print (f,e)
+    print ('full cost expansion: ', sc)
+    print ('partial A',sp.diff(sc,sp.symbols('A')))
+    print ('partial B',sp.diff(sc,sp.symbols('B')))
+    print ('done')
 
-    A,B,x,f,f2 = sp.symbols('A B x f f2')
-    f = guessA*x +guessB
-    print('f',f)
-    z = f.subs(x,3)
-    print (type(z))
+    print(grad_descent2())
 
+test()
 
-    print (type(as_int(z)))
-    print (z)
-
-    c = costP(f, x, testData)
-    print('init cost ',c)
-
-    i,a,b = sp.symbols('i a b')
-    a=1
-    b=5
-    #print (sum.summation(f*i,(i,a,b)))
-    #print (sum.summation(f2*i,(i,a,b)))
-    f2 = A*x*5 + B
-    print (f2*i,type(f2*i))
-    s = sum.summation(f2*i,(i,a,b))
-
-    print (sp.diff(sum.summation(f2*i,(i,a,b)),A))
-    print (sp.diff(sum.summation(f2*i,(i,a,b)),B))
-
-    #sp.init_printing() # what this do
-
-    """ 
-    A,B,x,f = sp.symbols('A B x f')
-    f = (A * x) + B
-    print (f)
-    x = A + 3
-    sp.solve(x,1)   # how to solve for x = A+3 where A=1?  x = 4
-
-    n=5
-    print (x.evalf(subs={A: 2}))
-    print (f.evalf(subs={B: 3}))
-    print (x.subs(A,3))
-    print (f.subs(B,4))
-
-
-    # how to do f(A=3, B=1) = 3x + 1 ?
-
-    print ('diff to A: ', sp.diff(A*x+B, A))
-    print ('diff to B: ', sp.diff(A*x+B, B))
-    print ('f=',f)
-
-
-    """
