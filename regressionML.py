@@ -53,6 +53,8 @@ def grad_descent2(testData=setupData()):
     A,B,x,y = sp.symbols('A B x y')
     f = A*x + B  # linear func y=mx+b
     e = (f - y)**2  # error squared
+    print ('init guess A: %f, B: %f'%(guessA,guessB))
+    print ('init func: %s, test size: %d' %(str(f),testData.shape[0]))
     costF = evalSumF(e,x,y,testData)  # cost fun evaluted for testData
     print('init costF',str(costF)[:80])
     costEval = costF.subs(A,guessA).subs(B,guessB)  # cost evaluted for A B guess
@@ -67,7 +69,7 @@ def grad_descent2(testData=setupData()):
         previousCost = costEval
         costEval = costF.subs(A,guessA).subs(B,guessB)
         costChange = previousCost-costEval
-        print ('i,Cost,A,B',i, costEval, guessA, guessB)
+        print ('i=%d,cost=%d,A=%f,B=%f'%(i, int(costEval), guessA, guessB))
         i=i+1
     return guessA,guessB
 
