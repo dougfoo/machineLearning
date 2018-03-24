@@ -5,6 +5,15 @@ import sympy.concrete.summations as sum
 import itertools
 import time
 
+#return in array with original result in [0], timing in [1]
+def time_fn( fn, *args, **kwargs ):
+    start = time.clock()
+    results = fn( *args, **kwargs )
+    end = time.clock()
+    fn_name = fn.__module__ + "." + fn.__name__
+    #print fn_name + ": " + str(end-start) + "s"
+    return [results,end-start]
+
 def setupData(max=1000):
     url='http://www.stat.ufl.edu/~winner/data/brainhead.dat'
     data=requests.get(url)
@@ -33,15 +42,15 @@ def evalSumF(f,x,y,testData):
         n += f.subs(x,d.head_size).subs(y,d.brain_weight)
     return n * (1.0/len(testData))
 
-# generate partial derivative of e, with respect to v, for testData (x,y) and evaluate
-def evalPartialDeriv(e,x,y,testData,v,guessV,o,guessO):
-    pc = evalSumF(sp.diff(e,v),x,y,testData)
+# generate partial derivative of f, with respect to v, for testData (x,y) and evaluate
+def evalPartialDeriv(f,x,y,testData,v,guessV,o,guessO):
+    pc = evalSumF(sp.diff(f,v),x,y,testData)
     pceval = pc.subs(v,guessV).subs(o,guessO)
     #print ('    v,p,pc:pceval',v,guessV,p,pc,pceval)
     return pceval
 
-# hard coded solver, start w/ guess, solve cost, iterate cost+/-partialDerivs
-def grad_descent2(testData=setupData()):
+# semi-hard coded solver for f(x,y) given data series testData, start w/ guess, solve cost, iterate cost+/-partialDerivs
+def grad_descent2(f, testData=setupData()):
     guessA = guessB = 1.0   #initial guess y=1x+1
 
     stepA = 0.00000005   #dif step for diff A,B ?
@@ -51,7 +60,6 @@ def grad_descent2(testData=setupData()):
     costChange = 1.0
 
     A,B,x,y = sp.symbols('A B x y')
-    f = A*x + B  # linear func y=mx+b
     e = (f - y)**2  # error squared
     print ('init guess A: %f, B: %f'%(guessA,guessB))
     print ('init func: %s, test size: %d' %(str(f),testData.shape[0]))
@@ -73,32 +81,17 @@ def grad_descent2(testData=setupData()):
         i=i+1
     return guessA,guessB
 
-def test():
-    xarr,yarr = ([1,2,3,4],[2,4,6,8])
-    A,B,x,y = sp.symbols('A B x y')
+def testLD2():
+    timings = []
+    dfs = makeFakeData()
+    A,B,x = sp.symbols('A B x')
     f = A*x + B  # linear func y=mx+b
-    e = (f - y)**2  # error squared
-    sc = evalSumF(e,x,y,setupData(5))
-    print (f,e)
-    print ('full cost expansion: ', sc)
-    print ('partial A',sp.diff(sc,sp.symbols('A')))
-    print ('partial B',sp.diff(sc,sp.symbols('B')))
-    print ('done')
 
-#return in array with original result in [0], timing in [1]
-def time_fn( fn, *args, **kwargs ):
-    start = time.clock()
-    results = fn( *args, **kwargs )
-    end = time.clock()
-    fn_name = fn.__module__ + "." + fn.__name__
-    #print fn_name + ": " + str(end-start) + "s"
-    return [results,end-start]
+    for d in dfs[0:2]:
+        r = time_fn(grad_descent2,f,d)
+        print ('finished for rows,time(s)',d.shape[0], r[1])
+        timings.append(r)
+    print('*** done')
+    print(timings)
 
-timings = []
-dfs = makeFakeData()
-for d in dfs[0:2]:
-    r = time_fn(grad_descent2,d)
-    print ('finished for rows,time(s)',d.shape[0], r[1])
-    timings.append(r)
-print('*** done')
-print(timings)
+testLD2()
