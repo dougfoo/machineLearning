@@ -26,59 +26,48 @@ def makeFakeData():
         print (d.shape)
     return dfs
 
-# iterator for series
-def costP(func, x, testData):
-    n = 0
-    print('test data size: ',len(testData))
-    for _,d in testData.iterrows():  # global test data
-        n += (as_int(func.subs(x,d.head_size)) - d.brain_weight)**2
-    return n * (1.0/len(testData))
-
-# evaluate/calculate e with data for x and y
-def evalSumF(e,testData):
+# evaluate/calculate f with data sub for x and y (very slow iterative)
+def evalSumF(f,x,y,testData):
     n=0
     for _,d in testData.iterrows():  # global test data
-        n += e.subs(sp.symbols('x'),d.head_size).subs(sp.symbols('y'),d.brain_weight)
+        n += f.subs(x,d.head_size).subs(y,d.brain_weight)
     return n * (1.0/len(testData))
 
 # generate partial derivative of e, with respect to v, for testData (x,y) and evaluate
-def evalPartialDeriv(e,testData,v,guessV,o,guessO):
-    p = sp.diff(e,v)
-    pc = evalSumF(p,testData)
+def evalPartialDeriv(e,x,y,testData,v,guessV,o,guessO):
+    pc = evalSumF(sp.diff(e,v),x,y,testData)
     pceval = pc.subs(v,guessV).subs(o,guessO)
     #print ('    v,p,pc:pceval',v,guessV,p,pc,pceval)
     return pceval
 
-# solver, start w/ guess, solve cost, iterate cost+/-partialDerivs
+# hard coded solver, start w/ guess, solve cost, iterate cost+/-partialDerivs
 def grad_descent2(testData=setupData()):
-    guessA = 1.0
-    guessB = 1.0   
+    guessA = guessB = 1.0   #initial guess y=1x+1
+
     stepA = 0.00000005   #dif step for diff A,B ?
     stepB = 0.25         #maybe normalize data first
-    step_limit = 0.0001 # when to stop, when cost stops changing
-    changeA = changeB = 1.0  # initial guess 1,1 or y=x+1
-    costChange = 1
+    step_limit = 0.0001  # when to stop, when cost stops changing
+    loop_limit = 2000    # arbitrary max limits
+    costChange = 1.0
 
     A,B,x,y = sp.symbols('A B x y')
     f = A*x + B  # linear func y=mx+b
     e = (f - y)**2  # error squared
-    costF = evalSumF(e,testData)  # cost fun evaluted for testData
+    costF = evalSumF(e,x,y,testData)  # cost fun evaluted for testData
     print('init costF',str(costF)[:80])
     costEval = costF.subs(A,guessA).subs(B,guessB)  # cost evaluted for A B guess
     print('init cost',costEval)
 
-    i=0
-    while (abs(costChange) > step_limit and i<5):
-        pda = evalPartialDeriv(e,testData,A,guessA,B,guessB)
-        pdb = evalPartialDeriv(e,testData,B,guessB,A,guessA)
-        changeA = stepA * pda
-        changeB = stepB * pdb
-        guessA = guessA - changeA
-        guessB = guessB - changeB
+    i=0  
+    while (abs(costChange) > step_limit and i<loop_limit):  # arbitrary limiter
+        pda = evalPartialDeriv(e,x,y,testData,A,guessA,B,guessB)
+        pdb = evalPartialDeriv(e,x,y,testData,B,guessB,A,guessA)
+        guessA = guessA - stepA * pda
+        guessB = guessB - stepB * pdb
         previousCost = costEval
         costEval = costF.subs(A,guessA).subs(B,guessB)
         costChange = previousCost-costEval
-        print ('i,Cost,A,B,-A,-B',i, costEval, guessA, guessB, changeA, changeB)
+        print ('i,Cost,A,B',i, costEval, guessA, guessB)
         i=i+1
     return guessA,guessB
 
@@ -87,7 +76,7 @@ def test():
     A,B,x,y = sp.symbols('A B x y')
     f = A*x + B  # linear func y=mx+b
     e = (f - y)**2  # error squared
-    sc = evalSumF(e,setupData(5))
+    sc = evalSumF(e,x,y,setupData(5))
     print (f,e)
     print ('full cost expansion: ', sc)
     print ('partial A',sp.diff(sc,sp.symbols('A')))
@@ -105,7 +94,7 @@ def time_fn( fn, *args, **kwargs ):
 
 timings = []
 dfs = makeFakeData()
-for d in dfs:
+for d in dfs[0:2]:
     r = time_fn(grad_descent2,d)
     print ('finished for rows,time(s)',d.shape[0], r[1])
     timings.append(r)
