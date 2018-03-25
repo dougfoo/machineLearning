@@ -153,7 +153,7 @@ def testPlot():
     while True:
         plt.pause(0.05)
 
-def readData():
+def plotGradientRun():
     import pandas as pd
     import matplotlib.pyplot as plt
 
@@ -161,30 +161,33 @@ def readData():
     ax = fig.add_subplot(1,1,1)
     plt.ion()
 
-    df2 = setupData(50)
+    #scatter of test pts
+    df2 = setupData()
     for _,row in df2.iterrows():
-        i= row['brain_weight']
-        y= row['head_size']
-        ax.scatter(i, y)
-        plt.pause(0.001)
+        x= row['head_size']
+        y= row['brain_weight']
+        ax.scatter(x, y)
+    max = df2['head_size'].max()
+    min = df2['head_size'].min()
 
+    # retrace gradient descent
     df = pd.read_csv('run.txt', header=None)
     print(df.shape)
     print(df.head())
 
     for _,d in df.iterrows(): 
-        m = str(d[2]).split('=')[1]
-        b = str(d[3]).split('=')[1]
+        m = float(d[2].split('=')[1])
+        b = float(d[3].split('=')[1])
+        ax.plot([min,max],[min*m + b,max*m + b])
+        plt.pause(0.01)
+        ax.lines.pop()
 
-        # get xa,ya, xb,yb 
-
-        plt.plot([0,y],[], transform=plt.gca().transAxes)
-        plt.pause(0.05)
+#        print('%f,%f %f,%f'%(0,b,1,b+m))
 
     while True:
         plt.pause(0.05)
 
-readData()
+plotGradientRun()
 
 #testPlot()
     
