@@ -2,7 +2,7 @@ import requests, pandas, io
 import sympy as sp
 from sympy.core.compatibility import as_int
 import sympy.concrete.summations as sum
-import myutils
+from myutils import *
 
 #return in array with original result in [0], timing in [1]
 
@@ -175,7 +175,7 @@ def plotGradientRun():
     while True:
         plt.pause(0.05)
 
-plotGradientRun()
-#testLD2()
+#plotGradientRun()
+testLD2()
 #testPlot()
     

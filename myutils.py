@@ -13,3 +13,5 @@ def churn(d, n):
         d = d.append(d)
     return d
 
+def myTest(x):
+    print('test',x)
