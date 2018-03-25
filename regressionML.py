@@ -103,45 +103,6 @@ def testLD3():
     print('*** done')
     print(timings)
 
-def testPlot():
-    import matplotlib.pyplot as plt
-
-    df = setupData(10)
-
-    fig = plt.figure()
-    ax = fig.add_subplot(1,1,1)
-
-    plt.ion()
-
-    for _,row in df.iterrows():
-        i= row['brain_weight']
-        y= row['head_size']
-        ax.scatter(i, y)
-        plt.pause(0.05)
-
-    ax.plot([0,1],[0,1], transform=plt.gca().transAxes)
-    ax.plot([0,1],[0,3], transform=plt.gca().transAxes)
-    plt.pause(1)
-    
-    print (ax.lines)
-    ax.lines.pop()
-    print (ax.lines)
-    ax.lines.pop()
-    print (ax.lines)
-    ax.plot([0,3],[0,1], transform=plt.gca().transAxes)
-#    plt.show()
-
-    guesses = []
-    for g in guesses:
-        plt.plot([0,1],[0,1], transform=plt.gca().transAxes)
-        plt.pause(0.1)
-        plt.clf()
-#    plt.plot(1,2)
-#    plt.plot(1000,2000)
-#
-
-    while True:
-        plt.pause(0.05)
 
 def plotGradientRun():
     import pandas as pd
@@ -159,6 +120,7 @@ def plotGradientRun():
         ax.scatter(x, y)
     max = df2['head_size'].max()
     min = df2['head_size'].min()
+    plt.pause(1)
 
     # retrace gradient descent
     df = pd.read_csv('run.txt', header=None)
@@ -169,13 +131,13 @@ def plotGradientRun():
         m = float(d[2].split('=')[1])
         b = float(d[3].split('=')[1])
         ax.plot([min,max],[min*m + b,max*m + b])
-        plt.pause(0.01)
+        plt.pause(0.1)
         ax.lines.pop()
 
     while True:
         plt.pause(0.05)
 
-#plotGradientRun()
-testLD2()
+plotGradientRun()
+#testLD2()
 #testPlot()
     
