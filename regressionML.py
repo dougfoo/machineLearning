@@ -10,7 +10,7 @@ def time_fn( fn, *args, **kwargs ):
     start = time.clock()
     results = fn( *args, **kwargs )
     end = time.clock()
-    fn_name = fn.__module__ + "." + fn.__name__
+    #fn_name = fn.__module__ + "." + fn.__name__
     #print fn_name + ": " + str(end-start) + "s"
     return [results,end-start]
 
@@ -121,21 +121,25 @@ def testPlot():
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
 
-#    plt.axis([0, 2000, 0, 5000])
-#    plt.ion()
-
+    plt.ion()
 
     for _,row in df.iterrows():
         i= row['brain_weight']
         y= row['head_size']
         ax.scatter(i, y)
-        plt.pause(0.005)
+        plt.pause(0.05)
 
     ax.plot([0,1],[0,1], transform=plt.gca().transAxes)
     ax.plot([0,1],[0,3], transform=plt.gca().transAxes)
     plt.pause(1)
     
     print (ax.lines)
+    ax.lines.pop()
+    print (ax.lines)
+    ax.lines.pop()
+    print (ax.lines)
+    ax.plot([0,3],[0,1], transform=plt.gca().transAxes)
+#    plt.show()
 
     guesses = []
     for g in guesses:
@@ -149,5 +153,38 @@ def testPlot():
     while True:
         plt.pause(0.05)
 
-testPlot()
+def readData():
+    import pandas as pd
+    import matplotlib.pyplot as plt
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    plt.ion()
+
+    df2 = setupData(50)
+    for _,row in df2.iterrows():
+        i= row['brain_weight']
+        y= row['head_size']
+        ax.scatter(i, y)
+        plt.pause(0.001)
+
+    df = pd.read_csv('run.txt', header=None)
+    print(df.shape)
+    print(df.head())
+
+    for _,d in df.iterrows(): 
+        m = str(d[2]).split('=')[1]
+        b = str(d[3]).split('=')[1]
+
+        # get xa,ya, xb,yb 
+
+        plt.plot([0,y],[], transform=plt.gca().transAxes)
+        plt.pause(0.05)
+
+    while True:
+        plt.pause(0.05)
+
+readData()
+
+#testPlot()
     
