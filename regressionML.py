@@ -2,17 +2,9 @@ import requests, pandas, io
 import sympy as sp
 from sympy.core.compatibility import as_int
 import sympy.concrete.summations as sum
-import itertools
-import time
+import myutils
 
 #return in array with original result in [0], timing in [1]
-def time_fn( fn, *args, **kwargs ):
-    start = time.clock()
-    results = fn( *args, **kwargs )
-    end = time.clock()
-    #fn_name = fn.__module__ + "." + fn.__name__
-    #print fn_name + ": " + str(end-start) + "s"
-    return [results,end-start]
 
 def setupData(max=1000):
     url='http://www.stat.ufl.edu/~winner/data/brainhead.dat'
@@ -21,11 +13,6 @@ def setupData(max=1000):
     col_widths=[(8,8),(16,16),(21-24),(29-32)]
     df=pandas.read_fwf(io.StringIO(data.text), names=col_names, colspec=col_widths)
     return df.head(max)
-
-def churn(d, n):
-    for _ in itertools.repeat(None, n):
-        d = d.append(d)
-    return d
 
 def makeFakeData():
     print('setup expanded datasets (dfs[])')
@@ -85,6 +72,9 @@ def grad_descent2(f, testData=setupData()):
 def grad_descent3(x,y):
     guessA = guessB = 1.0
     return guessA,guessB
+
+##########################
+##### test runnners  #####
 
 def testLD2():
     timings = []
@@ -182,12 +172,10 @@ def plotGradientRun():
         plt.pause(0.01)
         ax.lines.pop()
 
-#        print('%f,%f %f,%f'%(0,b,1,b+m))
-
     while True:
         plt.pause(0.05)
 
 plotGradientRun()
-
+#testLD2()
 #testPlot()
     
