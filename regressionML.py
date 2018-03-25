@@ -81,6 +81,11 @@ def grad_descent2(f, testData=setupData()):
         i=i+1
     return guessA,guessB
 
+# matrix method for gradient descent
+def grad_descent3(x,y):
+    guessA = guessB = 1.0
+    return guessA,guessB
+
 def testLD2():
     timings = []
     dfs = makeFakeData()
@@ -94,4 +99,55 @@ def testLD2():
     print('*** done')
     print(timings)
 
-testLD2()
+#test matrix
+def testLD3():
+    timings = []
+    dfs = makeFakeData()
+    x=[]
+    y=[]
+
+    for d in dfs[0:2]:
+        r = time_fn(grad_descent3,x,y)
+        print ('finished for rows,time(s)',d.shape[0], r[1])
+        timings.append(r)
+    print('*** done')
+    print(timings)
+
+def testPlot():
+    import matplotlib.pyplot as plt
+
+    df = setupData(10)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+
+#    plt.axis([0, 2000, 0, 5000])
+#    plt.ion()
+
+
+    for _,row in df.iterrows():
+        i= row['brain_weight']
+        y= row['head_size']
+        ax.scatter(i, y)
+        plt.pause(0.005)
+
+    ax.plot([0,1],[0,1], transform=plt.gca().transAxes)
+    ax.plot([0,1],[0,3], transform=plt.gca().transAxes)
+    plt.pause(1)
+    
+    print (ax.lines)
+
+    guesses = []
+    for g in guesses:
+        plt.plot([0,1],[0,1], transform=plt.gca().transAxes)
+        plt.pause(0.1)
+        plt.clf()
+#    plt.plot(1,2)
+#    plt.plot(1000,2000)
+#
+
+    while True:
+        plt.pause(0.05)
+
+testPlot()
+    
