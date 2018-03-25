@@ -1,4 +1,5 @@
 import requests, pandas, io
+import matplotlib.pyplot as plt
 import sympy as sp
 from sympy.core.compatibility import as_int
 import sympy.concrete.summations as sum
@@ -37,7 +38,7 @@ def evalPartialDeriv(f,x,y,testData,v,guessV,o,guessO):
     return pceval
 
 # semi-hard coded solver for f(x,y) given data series testData, start w/ guess, solve cost, iterate cost+/-partialDerivs
-def grad_descent2(f, testData=setupData()):
+def grad_descent2(f, testData=setupData(), pltAx=False):
     guessA = guessB = 1.0   #initial guess y=1x+1
 
     stepA = 0.00000005   #dif step for diff A,B ?
@@ -55,6 +56,13 @@ def grad_descent2(f, testData=setupData()):
     costEval = costF.subs(A,guessA).subs(B,guessB)  # cost evaluted for A B guess
     print('init cost',costEval)
 
+    # add optional plot - scatter of testData
+    if (pltAx):
+        pltAx=plotScatter(testData,xLabel='head_size',yLabel='brain_weight')
+        max = testData['head_size'].max()
+        min = testData['head_size'].min()
+        print(pltAx, max,min)
+
     i=0  
     while (abs(costChange) > step_limit and i<loop_limit):  # arbitrary limiter
         pda = evalPartialDeriv(e,x,y,testData,A,guessA,B,guessB)
@@ -65,6 +73,9 @@ def grad_descent2(f, testData=setupData()):
         costEval = costF.subs(A,guessA).subs(B,guessB)
         costChange = previousCost-costEval
         print ('i=%d,cost=%d,A=%f,B=%f'%(i, int(costEval), guessA, guessB))
+        # add optional plot of current regression line
+        if (pltAx):
+            plotGradient(pltAx,guessA,guessB,min,max)
         i=i+1
     return guessA,guessB
 
@@ -76,14 +87,14 @@ def grad_descent3(x,y):
 ##########################
 ##### test runnners  #####
 
-def testLD2():
+def testLD2(plt=False):
     timings = []
     dfs = makeFakeData()
     A,B,x = sp.symbols('A B x')
     f = A*x + B  # linear func y=mx+b
 
     for d in dfs[0:2]:
-        r = time_fn(grad_descent2,f,d)
+        r = time_fn(grad_descent2,f,d,plt)
         print ('finished for rows,time(s)',d.shape[0], r[1])
         timings.append(r)
     print('*** done')
@@ -103,9 +114,29 @@ def testLD3():
     print('*** done')
     print(timings)
 
+# x,y is string column from dataFrame
+def plotScatter(initData,xLabel,yLabel):
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    plt.ion()
 
+    #scatter of test pts
+    for _,row in initData.iterrows():
+        x= row[xLabel]
+        y= row[yLabel]
+        ax.scatter(x, y)
+    plt.pause(0.01)
+    return ax
+
+def plotGradient(ax,A,B,min,max):
+    if (len(ax.lines) > 0):
+        ax.lines.pop()
+    ax.plot([min,max],[min*A + B,max*A + B])
+    plt.pause(0.01)
+    return ax
+
+# test plotting
 def plotGradientRun():
-    import pandas as pd
     import matplotlib.pyplot as plt
 
     fig = plt.figure()
@@ -137,7 +168,6 @@ def plotGradientRun():
     while True:
         plt.pause(0.05)
 
-plotGradientRun()
-#testLD2()
-#testPlot()
-    
+#plotGradientRun()
+testLD2(plt=True)
+
