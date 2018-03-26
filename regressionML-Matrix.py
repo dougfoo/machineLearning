@@ -1,15 +1,7 @@
 import requests, pandas, io
 import itertools
 import time
-
-#return in array with original result in [0], timing in [1]
-def time_fn( fn, *args, **kwargs ):
-    start = time.clock()
-    results = fn( *args, **kwargs )
-    end = time.clock()
-    #fn_name = fn.__module__ + "." + fn.__name__
-    #print fn_name + ": " + str(end-start) + "s"
-    return [results,end-start]
+import myutils
 
 def setupData(max=1000):
     url='http://www.stat.ufl.edu/~winner/data/brainhead.dat'
@@ -18,11 +10,6 @@ def setupData(max=1000):
     col_widths=[(8,8),(16,16),(21-24),(29-32)]
     df=pandas.read_fwf(io.StringIO(data.text), names=col_names, colspec=col_widths)
     return df.head(max)
-
-def churn(d, n):
-    for _ in itertools.repeat(None, n):
-        d = d.append(d)
-    return d
 
 def makeFakeData():
     print('setup expanded datasets (dfs[])')

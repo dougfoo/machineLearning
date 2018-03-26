@@ -8,11 +8,17 @@ from myutils import *
 #return in array with original result in [0], timing in [1]
 
 def setupData(max=1000):
+    import os.path
+    if (os.path.isfile("myDataFrame.csv")):
+        return pandas.read_csv('myDataFrame.csv').head(max)
+
     url='http://www.stat.ufl.edu/~winner/data/brainhead.dat'
+    print('fetching %s'%url)
     data=requests.get(url)
     col_names=('gender', 'age_range', 'head_size', 'brain_weight')
     col_widths=[(8,8),(16,16),(21-24),(29-32)]
     df=pandas.read_fwf(io.StringIO(data.text), names=col_names, colspec=col_widths)
+    df.to_csv('myDataFrame.csv')
     return df.head(max)
 
 def makeFakeData():
@@ -95,20 +101,6 @@ def testLD2(plt=False):
 
     for d in dfs[0:2]:
         r = time_fn(grad_descent2,f,d,plt)
-        print ('finished for rows,time(s)',d.shape[0], r[1])
-        timings.append(r)
-    print('*** done')
-    print(timings)
-
-#test matrix
-def testLD3():
-    timings = []
-    dfs = makeFakeData()
-    x=[]
-    y=[]
-
-    for d in dfs[0:2]:
-        r = time_fn(grad_descent3,x,y)
         print ('finished for rows,time(s)',d.shape[0], r[1])
         timings.append(r)
     print('*** done')
