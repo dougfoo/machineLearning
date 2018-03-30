@@ -58,7 +58,7 @@ def grad_descent2(f, testData=setupData(), pltAx=False):
     print ('init guess A: %f, B: %f'%(guessA,guessB))
     print ('init func: %s, test size: %d' %(str(f),testData.shape[0]))
     costF = evalSumF(e,x,y,testData)  # cost fun evaluted for testData
-    print('init costF',str(costF)[:80])
+    print('init costF',str(costF)[:80])  # oddly this line crashes on yoga tablet
     costEval = costF.subs(A,guessA).subs(B,guessB)  # cost evaluted for A B guess
     print('init cost',costEval)
 
@@ -131,6 +131,8 @@ def plotGradient(ax,A,B,min,max):
 def plotGradientRun():
     import matplotlib.pyplot as plt
 
+    plt.xlim(2000,5000)
+    plt.ylim(-700,4000)
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     plt.ion()
@@ -146,7 +148,7 @@ def plotGradientRun():
     plt.pause(1)
 
     # retrace gradient descent
-    df = pd.read_csv('run.txt', header=None)
+    df = pandas.read_csv('run.txt', header=None)
     print(df.shape)
     print(df.head())
 
