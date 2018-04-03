@@ -5,30 +5,6 @@ from sympy.core.compatibility import as_int
 import sympy.concrete.summations as sum
 from myutils import *
 
-#return in array with original result in [0], timing in [1]
-
-def setupData(max=1000):
-    import os.path
-    if (os.path.isfile("myDataFrame.csv")):
-        return pandas.read_csv('myDataFrame.csv').head(max)
-
-    url='http://www.stat.ufl.edu/~winner/data/brainhead.dat'
-    print('fetching %s'%url)
-    data=requests.get(url)
-    col_names=('gender', 'age_range', 'head_size', 'brain_weight')
-    col_widths=[(8,8),(16,16),(21-24),(29-32)]
-    df=pandas.read_fwf(io.StringIO(data.text), names=col_names, colspec=col_widths)
-    df.to_csv('myDataFrame.csv')
-    return df.head(max)
-
-def makeFakeData():
-    print('setup expanded datasets (dfs[])')
-    df = setupData()
-    dfs = [df,churn(df,4),churn(df,8),churn(df,12),churn(df,16)]        
-    for d in dfs:
-        print (d.shape)
-    return dfs
-
 # evaluate/calculate f with data sub for x and y (very slow iterative)
 def evalSumF(f,x,y,testData):
     n=0
@@ -43,7 +19,7 @@ def evalPartialDeriv(f,x,y,testData,v,guessV,o,guessO):
     #print ('    v,p,pc:pceval',v,guessV,p,pc,pceval)
     return pceval
 
-# semi-hard coded solver for f(x,y) given data series testData, start w/ guess, solve cost, iterate cost+/-partialDerivs
+# semi-hard coded batch solver for f(x,y) given data series testData, start w/ guess, solve cost, iterate cost+/-partialDerivs
 def grad_descent2(f, testData=setupData(), pltAx=False):
     guessA = guessB = 1.0   #initial guess y=1x+1
 
@@ -85,8 +61,13 @@ def grad_descent2(f, testData=setupData(), pltAx=False):
         i=i+1
     return guessA,guessB
 
-# matrix method for gradient descent
+# partial batch method for gradient descent
 def grad_descent3(x,y):
+    guessA = guessB = 1.0
+    return guessA,guessB
+
+# stochastic method for gradient descent
+def grad_descent4(x,y):
     guessA = guessB = 1.0
     return guessA,guessB
 
