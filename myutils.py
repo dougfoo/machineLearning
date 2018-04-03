@@ -1,5 +1,6 @@
 import time, itertools
 import requests, pandas, io
+import matplotlib.pyplot as plt
 
 #return in array with original result in [0], timing in [1]
 def time_fn( fn, *args, **kwargs ):
@@ -32,3 +33,26 @@ def makeFakeData():
     for d in dfs:
         print (d.shape)
     return dfs
+
+# x,y is string column from dataFrame to plot on x,y axes
+def plotScatter(initData,xLabel,yLabel):
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    plt.ion()
+
+    #scatter of test pts
+    for _,row in initData.iterrows():
+        x= row[xLabel]
+        y= row[yLabel]
+        ax.scatter(x, y)
+    plt.pause(0.01)
+    return ax
+
+# plot new line Ax+B
+def plotLine(ax,A,B,min=0,max=5000):
+    if (len(ax.lines) > 0):
+        ax.lines.pop()
+    ax.plot([min,max],[min*A + B,max*A + B])
+    plt.pause(0.01)
+    return ax
+

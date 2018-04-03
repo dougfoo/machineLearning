@@ -57,58 +57,36 @@ def grad_descent2(f, testData=setupData(), pltAx=False):
         print ('i=%d,cost=%d,A=%f,B=%f'%(i, int(costEval), guessA, guessB))
         # add optional plot of current regression line
         if (pltAx):
-            plotGradient(pltAx,guessA,guessB,min,max)
+            plotLine(pltAx,guessA,guessB,min,max)
         i=i+1
     return guessA,guessB
 
 # partial batch method for gradient descent
-def grad_descent3(x,y):
+def grad_descent_batch(x,y):
     guessA = guessB = 1.0
     return guessA,guessB
 
 # stochastic method for gradient descent
-def grad_descent4(x,y):
+def grad_descent_stochastic(x,y):
     guessA = guessB = 1.0
     return guessA,guessB
 
 ##########################
 ##### test runnners  #####
 
-def testLD2(plt=False):
-    timings = []
-    dfs = makeFakeData()
+# test normal gradient descent
+def testGD(plt=False, gd=grad_descent2):
+    d = setupData()
     A,B,x = sp.symbols('A B x')
     f = A*x + B  # linear func y=mx+b
 
-    for d in dfs[0:2]:
-        r = time_fn(grad_descent2,f,d,plt)
-        print ('finished for rows,time(s)',d.shape[0], r[1])
-        timings.append(r)
+    timing = time_fn(gd,f,d,plt)
+    print ('finished for rows,time(s)',d.shape, timing)
     print('*** done')
-    print(timings)
+    print(timing)
 
-# x,y is string column from dataFrame
-def plotScatter(initData,xLabel,yLabel):
-    fig = plt.figure()
-    ax = fig.add_subplot(1,1,1)
-    plt.ion()
 
-    #scatter of test pts
-    for _,row in initData.iterrows():
-        x= row[xLabel]
-        y= row[yLabel]
-        ax.scatter(x, y)
-    plt.pause(0.01)
-    return ax
-
-def plotGradient(ax,A,B,min,max):
-    if (len(ax.lines) > 0):
-        ax.lines.pop()
-    ax.plot([min,max],[min*A + B,max*A + B])
-    plt.pause(0.01)
-    return ax
-
-# test plotting
+# test plotting from file
 def plotGradientRun():
     import matplotlib.pyplot as plt
 
@@ -144,5 +122,7 @@ def plotGradientRun():
         plt.pause(0.05)
 
 #plotGradientRun()
-testLD2(plt=True)
+testGD(plt=True, gd=grad_descent2)
+testGD(plt=True, gd=grad_descent_batch)
+testGD(plt=True, gd=grad_descent_stochastic)
 
