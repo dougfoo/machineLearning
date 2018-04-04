@@ -6,6 +6,15 @@ import sympy.concrete.summations as sum
 from myutils import *
 from sklearn.utils import shuffle
 
+# @todo visuals/demo 
+#      - make it run command line w/ parameters 
+#      - add plot titles
+#      - autosize plot better 
+#      - plot diff of algo speed / efficiency
+# @todo algo fixes
+#      - normalize/scale x/y better
+#      - change from A,B to Theta[n] for parameters to generalize 
+
 # evaluate/calculate f with data sub for x and y (very slow iterative)
 def evalSumF(f,x,y,testData):
     n=0
@@ -26,8 +35,8 @@ def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None):
 
     stepA = 0.00000005   #dif step for diff A,B ?
     stepB = 0.25         #maybe normalize data first
-    step_limit = 100.0    # when to stop, when cost stops changing
-    loop_limit = 100    # arbitrary max limits
+    step_limit = 100.0   # when to stop, when cost stops changing
+    loop_limit = 500     # arbitrary max limits
     costChange = step_limit+1
 
     A,B,x,y = sp.symbols('A B x y')
