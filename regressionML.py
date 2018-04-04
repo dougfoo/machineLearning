@@ -4,6 +4,7 @@ import sympy as sp
 from sympy.core.compatibility import as_int
 import sympy.concrete.summations as sum
 from myutils import *
+from sklearn.utils import shuffle
 
 # evaluate/calculate f with data sub for x and y (very slow iterative)
 def evalSumF(f,x,y,testData):
@@ -20,10 +21,12 @@ def evalPartialDeriv(f,x,y,testData,v,guessV,o,guessO):
     return pceval
 
 # semi-hard coded batch solver for f(x,y) given data series testData, start w/ guess, solve cost, iterate cost+/-partialDerivs
-def grad_descent2(f, testData=setupData(), pltAx=False):
+def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None):
     guessA = guessB = 1.0   #initial guess y=1x+1
 
-    stepA = 0.00000005   #dif step for diff A,B ?
+#    stepA = 0.00000005   #dif step for diff A,B ?
+#    stepB = 0.25         #maybe normalize data first
+    stepA = 0.000000005   #dif step for diff A,B ?
     stepB = 0.25         #maybe normalize data first
     step_limit = 0.0001  # when to stop, when cost stops changing
     loop_limit = 2000    # arbitrary max limits
@@ -45,25 +48,42 @@ def grad_descent2(f, testData=setupData(), pltAx=False):
         min = testData['head_size'].min()
         print(pltAx, max,min)
 
-    i=0  
+    i=j=l=0
+    if (batchSize == None):
+        batchSize = len(testData)  #@todo can i set this in func param
+
+    # outer loop std grad descent solver loop
     while (abs(costChange) > step_limit and i<loop_limit):  # arbitrary limiter
-        pda = evalPartialDeriv(e,x,y,testData,A,guessA,B,guessB)
-        pdb = evalPartialDeriv(e,x,y,testData,B,guessB,A,guessA)
-        guessA = guessA - stepA * pda
-        guessB = guessB - stepB * pdb
-        previousCost = costEval
-        costEval = costF.subs(A,guessA).subs(B,guessB)
-        costChange = previousCost-costEval
-        print ('i=%d,cost=%d,A=%f,B=%f'%(i, int(costEval), guessA, guessB))
-        # add optional plot of current regression line
-        if (pltAx):
-            plotLine(pltAx,guessA,guessB,min,max)
-        i=i+1
+        i=j=k=0
+        testData = shuffle(testData)
+        k = j+batchSize if j+batchSize<len(testData) else len(testData)
+        dataBatch = testData[j:k]
+        print('reshuffled,rerun - batch size: %d, j: %d, k: %d, %d'%(batchSize,j,k, len(testData)/batchSize))
+
+        # inner batch of size batchSize - test in batches and redo again
+        while (i <= len(testData)/batchSize):
+            pda = evalPartialDeriv(e,x,y,dataBatch,A,guessA,B,guessB)
+            pdb = evalPartialDeriv(e,x,y,dataBatch,B,guessB,A,guessA)
+            guessA = guessA - stepA * pda
+            guessB = guessB - stepB * pdb
+            previousCost = costEval
+            costEval = costF.subs(A,guessA).subs(B,guessB)
+            costChange = previousCost-costEval
+            print ('l=%d,i=%d,cost=%d,A=%f,B=%f,bs=%d'%(l, i, int(costEval), guessA, guessB, batchSize))
+            # add optional plot of current regression line
+            if (pltAx):
+                plotLine(pltAx,guessA,guessB,min,max)
+            j = k
+            k = j+batchSize if j+batchSize<len(testData) else len(testData)
+            dataBatch = testData[j:k]
+            i += 1
+            l += 1
+
     return guessA,guessB
 
 # partial batch method for gradient descent
 def grad_descent_batch(x,y):
-    guessA = guessB = 1.0
+    guessA,guessB = 1,1
     return guessA,guessB
 
 # stochastic method for gradient descent
@@ -75,16 +95,15 @@ def grad_descent_stochastic(x,y):
 ##### test runnners  #####
 
 # test normal gradient descent
-def testGD(plt=False, gd=grad_descent2):
+def testGD(plt=False, gd=grad_descent2, bs=None):
     d = setupData()
     A,B,x = sp.symbols('A B x')
     f = A*x + B  # linear func y=mx+b
 
-    timing = time_fn(gd,f,d,plt)
+    timing = time_fn(gd,f,d,plt,bs)
     print ('finished for rows,time(s)',d.shape, timing)
     print('*** done')
     print(timing)
-
 
 # test plotting from file
 def plotGradientRun():
@@ -122,7 +141,7 @@ def plotGradientRun():
         plt.pause(0.05)
 
 #plotGradientRun()
-testGD(plt=True, gd=grad_descent2)
-testGD(plt=True, gd=grad_descent_batch)
+#testGD(plt=True, gd=grad_descent2)
+testGD(plt=True, gd=grad_descent2, bs=10)
 testGD(plt=True, gd=grad_descent_stochastic)
 
