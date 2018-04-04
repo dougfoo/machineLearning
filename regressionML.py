@@ -26,9 +26,9 @@ def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None):
 
     stepA = 0.00000005   #dif step for diff A,B ?
     stepB = 0.25         #maybe normalize data first
-    step_limit = 0.01    # when to stop, when cost stops changing
-    loop_limit = 2000    # arbitrary max limits
-    costChange = 1.0
+    step_limit = 100.0    # when to stop, when cost stops changing
+    loop_limit = 100    # arbitrary max limits
+    costChange = step_limit+1
 
     A,B,x,y = sp.symbols('A B x y')
     e = (f - y)**2  # error squared
@@ -51,7 +51,7 @@ def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None):
         batchSize = len(testData)  #@todo can i set this in func param
 
     # outer loop std grad descent solver loop
-    while (abs(costChange) > step_limit and i<loop_limit):  # arbitrary limiter
+    while (abs(costChange) > step_limit and l<loop_limit):  # arbitrary limiter
         i=j=k=0
         testData = shuffle(testData)
         k = j+batchSize if j+batchSize<len(testData) else len(testData)
@@ -130,10 +130,18 @@ def plotGradientRun():
         plt.pause(0.05)
 
 #plotGradientRun()
-#t1 = testGD(plt=True, gd=grad_descent2, bs=1, ts=22)   # equivalent of stocastic descent
-t2 = testGD(plt=True, gd=grad_descent2, bs=10, ts=22)  # equavalent of mini-batch descent
-#t3 = testGD(plt=True, gd=grad_descent2, ts=22)         # standard batch descent
+t1 = testGD(plt=True, gd=grad_descent2, bs=1, ts=52)   # equivalent of stocastic descent
+t2 = testGD(plt=True, gd=grad_descent2, bs=5, ts=52)  # equavalent of mini-batch descent
+t3 = testGD(plt=True, gd=grad_descent2, ts=52)         # standard batch descent
+
+t4 = testGD(plt=True, gd=grad_descent2, bs=1, ts=200)   # equivalent of stocastic descent
+t5 = testGD(plt=True, gd=grad_descent2, bs=20, ts=200)  # equavalent of mini-batch descent
+t6 = testGD(plt=True, gd=grad_descent2, ts=200)         # standard batch descent
 
 print('timing & results - stocastic:', t1)
 print('timing & results - mini batch:', t2)
 print('timing & results - batch:', t3)
+
+print('timing & results - stocastic:', t4)
+print('timing & results - mini batch:', t5)
+print('timing & results - batch:', t6)
