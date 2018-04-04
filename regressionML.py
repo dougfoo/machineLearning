@@ -5,6 +5,7 @@ from sympy.core.compatibility import as_int
 import sympy.concrete.summations as sum
 from myutils import *
 from sklearn.utils import shuffle
+import argparse
 
 # @todo visuals/demo 
 #      - make it run command line w/ parameters 
@@ -30,7 +31,7 @@ def evalPartialDeriv(f,x,y,testData,v,guessV,o,guessO):
     return pceval
 
 # semi-hard coded batch solver for f(x,y) given data series testData, start w/ guess, solve cost, iterate cost+/-partialDerivs
-def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None):
+def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None, t='grad_desc'):
     guessA = guessB = 1.0   #initial guess y=1x+1
 
     stepA = 0.00000005   #dif step for diff A,B ?
@@ -51,6 +52,7 @@ def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None):
     # add optional plot - scatter of testData
     if (pltAx):
         pltAx=plotScatter(testData,xLabel='head_size',yLabel='brain_weight')
+        pltAx.set_title(t)
         max = testData['head_size'].max()
         min = testData['head_size'].min()
         print(pltAx, max,min)
@@ -76,7 +78,7 @@ def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None):
             previousCost = costEval
             costEval = costF.subs(A,guessA).subs(B,guessB)
             costChange = previousCost-costEval
-            print ('l=%d,i=%d,cost=%d,A=%f,B=%f,bs=%d'%(l, i, int(costEval), guessA, guessB, batchSize))
+            print ('t=%s,l=%d,i=%d,cost=%d,A=%f,B=%f,bs=%d'%(t, l, i, int(costEval), guessA, guessB, batchSize))
             # add optional plot of current regression line
             if (pltAx):
                 plotLine(pltAx,guessA,guessB,min,max)
@@ -92,12 +94,12 @@ def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None):
 ##### test runnners  #####
 
 # test normal gradient descent
-def testGD(plt=False, gd=grad_descent2, bs=None, ts=None):
+def testGD(plt=False, gd=grad_descent2, bs=None, ts=None, t=None):
     d = setupData(ts)
     A,B,x = sp.symbols('A B x')
     f = A*x + B  # linear func y=mx+b
 
-    timing = time_fn(gd,f,d,plt,bs)
+    timing = time_fn(gd,f,d,plt,bs,t)
     print ('finished for rows,time(s)',d.shape, timing)
     print('*** done')
     print(timing)
@@ -138,19 +140,33 @@ def plotGradientRun():
     while True:
         plt.pause(0.05)
 
-#plotGradientRun()
-t1 = testGD(plt=True, gd=grad_descent2, bs=1, ts=52)   # equivalent of stocastic descent
-t2 = testGD(plt=True, gd=grad_descent2, bs=5, ts=52)  # equavalent of mini-batch descent
-t3 = testGD(plt=True, gd=grad_descent2, ts=52)         # standard batch descent
+##################
+## runtime main ##
+##################
 
-t4 = testGD(plt=True, gd=grad_descent2, bs=1, ts=200)   # equivalent of stocastic descent
-t5 = testGD(plt=True, gd=grad_descent2, bs=20, ts=200)  # equavalent of mini-batch descent
-t6 = testGD(plt=True, gd=grad_descent2, ts=200)         # standard batch descent
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('-bs', help='batch size', type=int)
+parser.add_argument('-ts', help='training size', type=int)
+parser.add_argument('-t', help='title', type=str)
+args = vars(parser.parse_args())
+
+_bs = args['bs']
+_ts = args['ts']
+_t = args['t']
+
+#plotGradientRun()
+t1 = testGD(plt=True, gd=grad_descent2, bs=_bs, ts=_ts, t=_t)   # equivalent of stocastic descent
+#t2 = testGD(plt=True, gd=grad_descent2, bs=5, ts=52)  # equavalent of mini-batch descent
+#t3 = testGD(plt=True, gd=grad_descent2, ts=52)         # standard batch descent
+
+#t4 = testGD(plt=True, gd=grad_descent2, bs=1, ts=200)   # equivalent of stocastic descent
+#t5 = testGD(plt=True, gd=grad_descent2, bs=20, ts=200)  # equavalent of mini-batch descent
+#t6 = testGD(plt=True, gd=grad_descent2, ts=200)         # standard batch descent
 
 print('timing & results - stocastic:', t1)
-print('timing & results - mini batch:', t2)
-print('timing & results - batch:', t3)
+#print('timing & results - mini batch:', t2)
+#print('timing & results - batch:', t3)
 
-print('timing & results - stocastic:', t4)
-print('timing & results - mini batch:', t5)
-print('timing & results - batch:', t6)
+#print('timing & results - stocastic:', t4)
+#print('timing & results - mini batch:', t5)
+#print('timing & results - batch:', t6)

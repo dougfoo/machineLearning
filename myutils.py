@@ -36,7 +36,7 @@ def makeFakeData():
 
 # x,y is string column from dataFrame to plot on x,y axes
 def plotScatter(initData,xLabel,yLabel):
-    fig = plt.figure()
+    fig = plt.figure(figsize=(4,4))
     ax = fig.add_subplot(1,1,1)
     plt.ion()
 
