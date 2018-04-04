@@ -24,11 +24,9 @@ def evalPartialDeriv(f,x,y,testData,v,guessV,o,guessO):
 def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None):
     guessA = guessB = 1.0   #initial guess y=1x+1
 
-#    stepA = 0.00000005   #dif step for diff A,B ?
-#    stepB = 0.25         #maybe normalize data first
-    stepA = 0.000000005   #dif step for diff A,B ?
+    stepA = 0.00000005   #dif step for diff A,B ?
     stepB = 0.25         #maybe normalize data first
-    step_limit = 0.0001  # when to stop, when cost stops changing
+    step_limit = 0.01    # when to stop, when cost stops changing
     loop_limit = 2000    # arbitrary max limits
     costChange = 1.0
 
@@ -58,10 +56,10 @@ def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None):
         testData = shuffle(testData)
         k = j+batchSize if j+batchSize<len(testData) else len(testData)
         dataBatch = testData[j:k]
-        print('reshuffled,rerun - batch size: %d, j: %d, k: %d, %d'%(batchSize,j,k, len(testData)/batchSize))
+#        print('shuffled loop - batch size: %d, j: %d, k: %d, %d'%(batchSize,j,k, len(testData)/batchSize))
 
         # inner batch of size batchSize - test in batches and redo again
-        while (i <= len(testData)/batchSize):
+        while (i < len(testData)/batchSize):
             pda = evalPartialDeriv(e,x,y,dataBatch,A,guessA,B,guessB)
             pdb = evalPartialDeriv(e,x,y,dataBatch,B,guessB,A,guessA)
             guessA = guessA - stepA * pda
@@ -81,22 +79,12 @@ def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None):
 
     return guessA,guessB
 
-# partial batch method for gradient descent
-def grad_descent_batch(x,y):
-    guessA,guessB = 1,1
-    return guessA,guessB
-
-# stochastic method for gradient descent
-def grad_descent_stochastic(x,y):
-    guessA = guessB = 1.0
-    return guessA,guessB
-
 ##########################
 ##### test runnners  #####
 
 # test normal gradient descent
-def testGD(plt=False, gd=grad_descent2, bs=None):
-    d = setupData()
+def testGD(plt=False, gd=grad_descent2, bs=None, ts=None):
+    d = setupData(ts)
     A,B,x = sp.symbols('A B x')
     f = A*x + B  # linear func y=mx+b
 
@@ -104,6 +92,7 @@ def testGD(plt=False, gd=grad_descent2, bs=None):
     print ('finished for rows,time(s)',d.shape, timing)
     print('*** done')
     print(timing)
+    return timing
 
 # test plotting from file
 def plotGradientRun():
@@ -141,7 +130,10 @@ def plotGradientRun():
         plt.pause(0.05)
 
 #plotGradientRun()
-#testGD(plt=True, gd=grad_descent2)
-testGD(plt=True, gd=grad_descent2, bs=10)
-testGD(plt=True, gd=grad_descent_stochastic)
+#t1 = testGD(plt=True, gd=grad_descent2, bs=1, ts=22)   # equivalent of stocastic descent
+t2 = testGD(plt=True, gd=grad_descent2, bs=10, ts=22)  # equavalent of mini-batch descent
+#t3 = testGD(plt=True, gd=grad_descent2, ts=22)         # standard batch descent
 
+print('timing & results - stocastic:', t1)
+print('timing & results - mini batch:', t2)
+print('timing & results - batch:', t3)
