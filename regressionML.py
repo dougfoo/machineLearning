@@ -36,13 +36,8 @@ def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None, t='grad_
 
     stepA = 0.00000005   #dif step for diff A,B ?
     stepB = 0.25         #maybe normalize data first
-<<<<<<< HEAD
     step_limit = 1.0    # when to stop, when cost stops changing
     loop_limit = 1000    # arbitrary max limits
-=======
-    step_limit = 100.0   # when to stop, when cost stops changing
-    loop_limit = 500     # arbitrary max limits
->>>>>>> bcccd34f875e9f68d6755399aebb9c62f66f2bd5
     costChange = step_limit+1
 
     A,B,x,y = sp.symbols('A B x y')
