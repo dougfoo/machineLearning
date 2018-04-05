@@ -1,0 +1,5 @@
+#!/bin/sh -x
+
+/Users/dougfoo/anaconda2/bin/python /Users/dougfoo/Documents/vsCodePy/regressionML.py -bs 1 -ts 100 -t 'stocastic' &
+/Users/dougfoo/anaconda2/bin/python /Users/dougfoo/Documents/vsCodePy/regressionML.py -bs 10 -ts 100 -t 'batch 10' &  
+/Users/dougfoo/anaconda2/bin/python /Users/dougfoo/Documents/vsCodePy/regressionML.py -ts 100 -t 'full batch' 
