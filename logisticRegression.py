@@ -11,64 +11,43 @@ def setupTestData():
     df = pandas.read_csv('fakeGagaData.dat')
     return df
 
-# generic solver for logistic regression take in array of theta and y
-def grad_descent3(f, cf, testData=setupData(), pltAx=False, batchSize=None, t='grad_desc'):
-    guessA = guessB = 1.0   #initial guess y=1x+1
-    step  = 0.001
-    stepA = 0.00000005   #dif step for diff A,B ?
-    stepB = 0.25         #maybe normalize data first
-    step_limit = 1.0    # when to stop, when cost change < step_limit
-    loop_limit = 1000    # arbitrary max limits
-    costChange = step_limit+1
+# solver for logistic regression
+# psuedocode for now
+def grad_descent3(testData):
+    guesses = [1.0]*6    # initial guess for all 
+    step = 0.0001        # init step
+    step_limit = 0.0001  # when to stop, when cost stops changing
+    loop_limit = 5       # arbitrary max limits
+    costChange = 1.0
 
-    A,B,x,y = sp.symbols('A B x y')
-    e = cf
-    print ('init guess A: %f, B: %f'%(guessA,guessB))
+    c,g,h,y,x = sp.symbols('c g h y x')
+    ts = sp.symbols('t0 t1 t2 t3 t4 t5')  #theta weight/parameter array
+    xs = sp.symbols('x0 x1 x2 x3 x4 x5')  #feature array
+
+    h = ts[0]*xs[0] + ts[1]*xs[1] + ts[2]*xs[2] + ts[3]*xs[3] + ts[4]*xs[4] + ts[5]*xs[5] 
+    g = 1 / (1+mp.e**-h)   # wrap h in sigmoid
+    c = y*-math.log(x) + (1-y)*-math.log(1-x)  # cost func of single sample
+    
+    print ('init guesses',guesses)
     print ('init func: %s, test size: %d' %(str(f),testData.shape[0]))
-    costF = evalSumF(e,x,y,testData)  # cost fun evaluted for testData
-    print('init costF',str(costF)[:80])  # oddly this line crashes on yoga tablet
-    costEval = costF.subs(A,guessA).subs(B,guessB)  # cost evaluted for A B guess
+    
+    costF = evalSumF(c,ts,xs,testData)  # cost fun evaluted for testData
+    print('init costF',str(costF)[:80]) # show first 80 char of cost evaluation
+    costEval = costF.subs(ts,guesses)  # cost evaluted for all terms guess
     print('init cost',costEval)
 
-    # add optional plot - scatter of testData
-    if (pltAx):
-        pltAx=plotScatter(testData,xLabel='head_size',yLabel='brain_weight')
-        pltAx.set_title(t)
-        max = testData['head_size'].max()
-        min = testData['head_size'].min()
-        print(pltAx, max,min)
-
-    i=j=l=0
-    if (batchSize == None):
-        batchSize = len(testData)  #@todo can i set this in func param
-
-    # outer loop std grad descent solver loop
-    while (abs(costChange) > step_limit and l<loop_limit):  # arbitrary limiter
-        i=j=k=0
-        testData = shuffle(testData)
-        k = j+batchSize if j+batchSize<len(testData) else len(testData)
-        dataBatch = testData[j:k]
-#        print('shuffled loop - batch size: %d, j: %d, k: %d, %d'%(batchSize,j,k, len(testData)/batchSize))
-
-        # inner batch of size batchSize - test in batches and redo again
-        while (i < len(testData)/batchSize):
-            pda = evalPartialDeriv(e,x,y,dataBatch,A,guessA,B,guessB)
-            pdb = evalPartialDeriv(e,x,y,dataBatch,B,guessB,A,guessA)
-            guessA = guessA - stepA * pda
-            guessB = guessB - stepB * pdb
-            previousCost = costEval
-            costEval = costF.subs(A,guessA).subs(B,guessB)
-            costChange = previousCost-costEval
-            print ('t=%s,l=%d,i=%d,cost=%d,A=%f,B=%f,bs=%d'%(t, l, i, int(costEval), guessA, guessB, batchSize))
-            # add optional plot of current regression line
-            if (pltAx):
-                plotLine(pltAx,guessA,guessB,min,max)
-            j = k
-            k = j+batchSize if j+batchSize<len(testData) else len(testData)
-            dataBatch = testData[j:k]
-            i += 1
-            l += 1
-    return guessA,guessB
+    i=0  
+    while (abs(costChange) > step_limit and i<loop_limit):  # arbitrary limiter
+        j=0
+        for theta in ts:
+            pdb = evalPartialDeriv(e,theta,xs[j],testData,guesses[j])
+            guesses[j] = guesses[j] - stepA * pda
+        previousCost = costEval
+        costEval = costF.subs(ts, guesses)
+        costChange = previousCost-costEval
+        print ('i=%d,cost=%d'%(i, int(costEval), guessA, guessB), guesses)
+        i=i+1
+    return guesses
 
 def toMatrix(df):
     x,y = sp.symbols('x y')
