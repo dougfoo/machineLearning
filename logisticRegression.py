@@ -1,4 +1,4 @@
-import requests, pandas, io, numpy, argparse
+import requests, pandas, io, numpy, argparse, math
 import matplotlib.pyplot as plt
 import sympy as sp
 from sympy.core.compatibility import as_int
@@ -24,30 +24,45 @@ def grad_descent3(testData):
     ts = sp.symbols('t0 t1 t2 t3 t4 t5')  #theta weight/parameter array
     xs = sp.symbols('x0 x1 x2 x3 x4 x5')  #feature array
 
-    h = ts[0]*xs[0] + ts[1]*xs[1] + ts[2]*xs[2] + ts[3]*xs[3] + ts[4]*xs[4] + ts[5]*xs[5] 
+#    h = ts[0]*xs[0] + ts[1]*xs[1] + ts[2]*xs[2] + ts[3]*xs[3] + ts[4]*xs[4] + ts[5]*xs[5] 
+    h = ts[0]*xs[0] + ts[1]*xs[1]   # start w/ just 2 terms 
     g = 1 / (1+mp.e**-h)   # wrap h in sigmoid
-    c = y*-math.log(x) + (1-y)*-math.log(1-x)  # cost func of single sample
+    c = y*-math.log(g) + (1-y)*-math.log(1-g)  # cost func of single sample
     
     print ('init guesses',guesses)
-    print ('init func: %s, test size: %d' %(str(f),testData.shape[0]))
+    print ('init func: %s, test size: %d' %(str(g),testData.shape[0]))
     
-    costF = evalSumF(c,ts,xs,testData)  # cost fun evaluted for testData
+    costF = evalSumF(c,xs,testData)  # cost fun evaluted for testData
     print('init costF',str(costF)[:80]) # show first 80 char of cost evaluation
-    costEval = costF.subs(ts,guesses)  # cost evaluted for all terms guess
+    costEval = costF.subs(ts[0],guesses[0]).subs(ts[1],guesses[1])   # can i do array->array? or tuple->tuple?
     print('init cost',costEval)
 
     i=0  
     while (abs(costChange) > step_limit and i<loop_limit):  # arbitrary limiter
         j=0
         for theta in ts:
-            pdb = evalPartialDeriv(e,theta,xs[j],testData,guesses[j])
-            guesses[j] = guesses[j] - stepA * pda
+            pd = evalPartialDeriv(e,theta,ts,xs[j],testData,guess,guesses)
+            guesses[j] = guesses[j] - step * pd
         previousCost = costEval
         costEval = costF.subs(ts, guesses)
         costChange = previousCost-costEval
-        print ('i=%d,cost=%d'%(i, int(costEval), guessA, guessB), guesses)
+        print ('i=%d,cost=%d'%(i, int(costEval)), guesses)
         i=i+1
     return guesses
+
+# expand f w/ x's replaced with training data
+def evalSumF(f,xs,testData):
+    n=0
+    for _,d in testData.iterrows():  # global test data
+        n += f.subs(xs[0],d.animal).subs(xs[1],d.vegetable).subs(y,d.gaga)
+    return n * (1.0/len(testData))
+
+# generate deriv and sub all x's w/ training data
+def evalPartialDeriv(f, theta, ts, xs, testData,guess,guesses):
+    pc = evalSumF(sp.diff(f,theta),xs,testData)
+    pceval = pc.subs(ts[0],guesses[0]).subs(ts[1],guesses[1])
+    #print ('    v,p,pc:pceval',v,guessV,p,pc,pceval)
+    return pceval
 
 def toMatrix(df):
     x,y = sp.symbols('x y')

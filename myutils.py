@@ -1,4 +1,4 @@
-import time, itertools
+import time, itertools, os
 import requests, pandas, io
 import matplotlib.pyplot as plt
 
@@ -18,11 +18,15 @@ def churn(d, n):
     return d
 
 def setupData(max=1000):
+    if (os.path.isfile("myDataFrame.csv")):
+        print 'reading cache copy from disk'
+        return pandas.read_csv('myDataFrame.csv').head(max)    
     url='http://www.stat.ufl.edu/~winner/data/brainhead.dat'
     data=requests.get(url)
     col_names=('gender', 'age_range', 'head_size', 'brain_weight')
     col_widths=[(8,8),(16,16),(21-24),(29-32)]
     df=pandas.read_fwf(io.StringIO(data.text), names=col_names, colspec=col_widths)
+    df.to_csv('myDataFrame.csv')
     return df.head(max)
 
 #replicate/grow data
