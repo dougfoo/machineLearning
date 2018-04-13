@@ -32,7 +32,7 @@ def grad_descent3(testData):
     print ('init guesses',guesses)
     print ('init func: %s, test size: %d' %(str(g),testData.shape[0]))
     
-    costF = evalSumF(c,xs,testData)  # cost fun evaluted for testData
+    costF = evalSumF(c,xs,testData,y)  # cost fun evaluted for testData
     print('init costF',str(costF)[:80]) # show first 80 char of cost evaluation
     costEval = costF.subs(ts[0],guesses[0]).subs(ts[1],guesses[1])   # can i do array->array? or tuple->tuple?
     print('init cost',costEval)
@@ -50,7 +50,7 @@ def grad_descent3(testData):
         i=i+1
     return guesses
 
-# expand f w/ x's replaced with training data
+# expand f w/ x's (and y's?) replaced with training data
 def evalSumF(f,xs,testData,y):
     n=0
     for _,d in testData.iterrows():  # global test data
