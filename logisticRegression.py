@@ -41,7 +41,7 @@ def grad_descent3(testData):
     while (abs(costChange) > step_limit and i<loop_limit):  # arbitrary limiter
         j=0
         for theta in ts:
-            pd = evalPartialDeriv(e,theta,ts,xs[j],testData,guess,guesses)
+            pd = evalPartialDeriv(e,theta,ts,xs,testData,y)
             guesses[j] = guesses[j] - step * pd
         previousCost = costEval
         costEval = costF.subs(ts, guesses)
@@ -51,17 +51,19 @@ def grad_descent3(testData):
     return guesses
 
 # expand f w/ x's replaced with training data
-def evalSumF(f,xs,testData):
+def evalSumF(f,xs,testData,y):
     n=0
     for _,d in testData.iterrows():  # global test data
         n += f.subs(xs[0],d.animal).subs(xs[1],d.vegetable).subs(y,d.gaga)
+    print('f, n: ',f,n)
     return n * (1.0/len(testData))
 
 # generate deriv and sub all x's w/ training data
-def evalPartialDeriv(f, theta, ts, xs, testData,guess,guesses):
-    pc = evalSumF(sp.diff(f,theta),xs,testData)
-    pceval = pc.subs(ts[0],guesses[0]).subs(ts[1],guesses[1])
-    #print ('    v,p,pc:pceval',v,guessV,p,pc,pceval)
+def evalPartialDeriv(f, theta, ts, xs, testData, y): #, guess, guesses):
+    pc = evalSumF(sp.diff(f,theta),xs,testData, y)
+    for t,x in zip(ts,xs):
+        pceval = pc.subs(t,x)
+    print ('pc, pceval',pc,pceval)
     return pceval
 
 def toMatrix(df):
