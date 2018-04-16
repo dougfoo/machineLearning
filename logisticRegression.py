@@ -37,7 +37,7 @@ def grad_descent3(testData):
     
     costF = evalSumF(c,xs,testData)  # cost fun evaluted for testData
     print('init costF',str(costF)[:80]) # show first 80 char of cost evaluation
-    cost = 0.0+costF.subs(ts[0],guesses[0]).subs(ts[1],guesses[1])  
+    cost = 0.0+costF.subs(zip(ts,guesses))  
     print('init cost',cost,type(cost))
 
     i=0  
@@ -47,20 +47,17 @@ def grad_descent3(testData):
             pd = evalPartialDeriv(c,theta,ts,xs,testData,guesses)
             guesses[j] = guesses[j] - step * pd
         previousCost = cost
-        _costF=costF
-        for t,g in zip(ts,guesses):
-            _costF = _costF.subs(t, g) 
-        cost = _costF
+        cost = costF.subs(zip(ts,guesses))
         costChange = previousCost-cost
         print ('i=%d,cost=%f'%(i, cost), guesses)
         i=i+1
     return guesses
 
-# expnd to avg(sum(evaluated for testData))
-def evalSumF(f,xs,testData):
+# expnd to avg(sum(evaluated for testData)) 
+def evalSumF(f,xs,testData):  # @TODO change testData to matrix
     n=0.0
     for _,d in testData.iterrows():  # global test data
-        n += f.subs(xs[0],d.animal).subs(xs[1],d.vegetable).subs(sp.symbols('y'),d.gaga)
+        n += f.subs(xs[0],d.animal).subs(xs[1],d.vegetable).subs(sp.symbols('y'),d.gaga)   # TODO cleanup
     n *= (1.0/len(testData))
     print('f %s expanded (%d) n: %s '%(str(f),len(testData),str(n)))
     return n 
@@ -68,8 +65,7 @@ def evalSumF(f,xs,testData):
 # generate deriv and sub all x's w/ training data and theta guess values
 def evalPartialDeriv(f,theta,ts,xs,testData,guesses):
     pdcost = evalSumF(sp.diff(f,theta),xs,testData)
-    for t,g in zip(ts,guesses):
-        pdcost = pdcost.subs(t,g)
+    pdcost = pdcost.subs(zip(ts,guesses))
     print ('pdcost f/t: ',pdcost,str(f),theta)
     return pdcost
 
