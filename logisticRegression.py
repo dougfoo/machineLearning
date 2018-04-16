@@ -13,42 +13,39 @@ def setupTestData():
     return df
 
 # generic solver takes in hypothesis function, cost func, training matrix, theta array, yarray
-def grad_descent4(hFunc, cFunc, trainingMatrix, thetaArr, yArr):
-    guesses = [1.0]*len(yArr)    # initial guess for all 
-    step = 0.0001        # init step
-    step_limit = 0.0001  # when to stop, when cost stops changing
-    loop_limit = 5       # arbitrary max limits
+def grad_descent4(hFunc, cFunc, trainingMatrix, yArr):
+    guesses = [0.1]*len(trainingMatrix[0])    # initial guess for all 
+    step = 0.01          # init step
+    step_limit = 0.001   # when to stop, when cost stops changing
+    loop_limit = 50      # arbitrary max limits
     costChange = 1.0
 
-    c,g,h,y,x = sp.symbols('c g h y x')
-    ts = sp.symbols('build thetaArr symbols')  #theta weight/parameter array
-    xs = sp.symbols('build x-featureArr symbols')  #feature array
+    log.warn ('init guesses %s',str(guesses))
+    log.warn ('init func: %s, training size: %d' %(str(hFunc),trainingMatrix.shape[0]))
 
-    h = ts*xs
-    g = 1 / (1+mp.e**-h)   # wrap h in sigmoid
-    c = y*-sp.log(g) + (1-y)*-sp.log(1-g)  # cost func of single sample
+    # TODO do i really need these 2 here... pass them in?
+    ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
+    xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
     
-    log.info ('g: %s',g)
-    log.info ('c: %s',c)
+    log.warn('ts %s',ts)
+    log.warn('xs %s',xs)
 
-    log.info ('init guesses %s',str(guesses))
-    log.info ('init func: %s, test size: %d' %(str(g),testData.shape[0]))
-    
-    costF = evalSumF(c,xs,testData)  # cost fun evaluted for testData
-    log.info('init costF',str(costF)[:80]) # show first 80 char of cost evaluation
+    costF = evalSumF2(cFunc,xs,trainingMatrix,yArr)  # cost fun evaluted for testData
+    log.warn('init costF %s',str(costF)[:80]) # show first 80 char of cost evaluation
     cost = 0.0+costF.subs(zip(ts,guesses))  
-    print('init cost',cost,type(cost))
+    log.warn('init cost %f %s',cost,type(cost))
 
     i=0  
     while (abs(costChange) > step_limit and i<loop_limit):  # arbitrary limiter
         j=0
         for theta in ts:
-            pd = evalPartialDeriv(c,theta,ts,xs,testData,guesses)
+            pd = evalPartialDeriv2(cFunc,theta,ts,xs,trainingMatrix,guesses,yArr)
             guesses[j] = guesses[j] - step * pd
+            j+=1
         previousCost = cost
         cost = costF.subs(zip(ts,guesses))
         costChange = previousCost-cost
-        print ('i=%d,cost=%f'%(i, cost), guesses)
+        log.warn('i=%d,costChange=%f,cost=%f, guesses=%s'%(i, costChange,cost,str(guesses)))
         i=i+1
     return guesses
 
@@ -107,9 +104,31 @@ def evalSumF(f,xs,testData):  # @TODO change testData to matrix
     log.info('f (%d) %s - \n  ->expanded: %s '%(len(testData), str(f), str(n)))
     return n 
 
+def evalSumF2(f,xs,trainingMatrix,yArr):  # @TODO change testData to matrix
+    assert (len(xs) == len(trainingMatrix[0]))
+    assert (len(trainingMatrix) == len(yArr))
+    n=0.0
+    _f = f 
+    for i,row in enumerate(trainingMatrix):
+        for j,x in enumerate(xs):
+            _f = _f.subs(x,row[j])
+        n+= _f.subs(sp.symbols('y'),yArr[i])
+        log.debug('_f: %s n: %s',_f, n)
+        _f = f
+        log.info('------ expand: y:(%d) %s to %s ', yArr[i],str(row),str(n))
+    n *= (1.0/len(trainingMatrix))
+    log.info('f (%d) %s - \n  ->expanded: %s '%(len(trainingMatrix[0]), str(f), str(n)))
+    return n 
+
 # generate deriv and sub all x's w/ training data and theta guess values
 def evalPartialDeriv(f,theta,ts,xs,testData,guesses):
     pdcost = evalSumF(sp.diff(f,theta),xs,testData)
+    pdcost = pdcost.subs(zip(ts,guesses))
+    log.info ('    --> pdcost %f ;  %s  ;  %s: '%(pdcost,str(f),str(theta)))
+    return pdcost
+
+def evalPartialDeriv2(f,theta,ts,xs,trainingMatrix,guesses,yArr):
+    pdcost = evalSumF2(sp.diff(f,theta),xs,trainingMatrix,yArr)
     pdcost = pdcost.subs(zip(ts,guesses))
     log.info ('    --> pdcost %f ;  %s  ;  %s: '%(pdcost,str(f),str(theta)))
     return pdcost
@@ -147,6 +166,30 @@ def testLR():
     toMatrixTest(df)
     toSymbolsTest(df)
     grad_descent3(df.head(10))
+
+def testLR2():
+    df = setupTestData()
+    trainingMatrix = df.iloc[:,2:7].as_matrix()
+    yArr = df.iloc[:,7:8].as_matrix()
+
+    log.debug (df)
+    log.debug (trainingMatrix)
+    log.debug (yArr)
+
+    ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
+    xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
+
+    c,g,h,y = sp.symbols('c g h y')
+    h = (sp.Matrix([ts])*sp.Matrix(xs))[0] # multipy ts's * xs's ( ts * xs.T )
+    g = 1 / (1+mp.e**-h)   # wrap h in sigmoid
+    c = -y*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
+
+    log.info ('g: %s',g)
+    log.info ('c: %s',c)
+    log.info ('tMatrix: %s',trainingMatrix)
+    log.info ('yArr: %s',yArr)
+    log.warn('columns: %s',df.head(0))
+    grad_descent4(g,c,trainingMatrix,yArr)
     print 'done'
 
 # store weights in theta[array] ?
@@ -158,4 +201,5 @@ def testLR():
 log.basicConfig(level=log.WARN)
 log.info('start %s'%(log.getLogger().level))
 
-testLR()
+#testLR()
+testLR2()
