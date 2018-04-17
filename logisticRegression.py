@@ -12,6 +12,43 @@ def setupTestData():
     df = pandas.read_csv('fakeGagaData.dat')
     return df
 
+def getGagaData(size=0.33):
+    import random, sklearn
+    import sklearn.feature_extraction.text
+    import sklearn.naive_bayes
+
+    TRAIN_PCT=size   # how much of our input will we reserve for test
+
+    def append_data(ds,dir,label):
+        filenames=os.listdir(dir)
+        for fn in filenames:
+            data=open(dir+'/'+fn,'r').read()
+            ds.append((data,label))
+        return ds
+
+    ######## Load the raw data
+    dataset=[]
+    append_data(dataset,'ml/lyrics/gaga','gaga')
+    append_data(dataset,'ml/lyrics/clash','clash')
+
+    ######## Partition the data into training set and test set
+    random.shuffle(dataset)
+    partition=int(TRAIN_PCT*len(dataset))
+    dataset=dataset[:partition]
+    testset=dataset[partition:]
+
+    print("gaga test set %i docs, training set %i docs" % (len(testset),len(dataset)))
+
+    ######## Train the algorithm with the labelled examples (training set)
+    data,target=zip(*dataset)
+    vec=sklearn.feature_extraction.text.CountVectorizer()
+    mat=vec.fit_transform(data)
+    yarr = list(target)
+    data = mat.toarray()
+    labels = vec.get_feature_names()
+    return data,yarr,labels
+
+
 # generic solver takes in hypothesis function, cost func, training matrix, theta array, yarray
 def grad_descent4(hFunc, cFunc, trainingMatrix, yArr):
     guesses = [0.1]*len(trainingMatrix[0])    # initial guess for all 
@@ -94,6 +131,29 @@ def testLR2():
     grad_descent4(g,c,trainingMatrix,yArr)
     print 'done'
 
+def testGaga():
+    trainingMatrix,yArr,labels = getGagaData(0.01)
+
+    log.debug (trainingMatrix)
+    log.debug (yArr)
+
+    ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
+    xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
+
+    c,g,h,y = sp.symbols('c g h y')
+    h = (sp.Matrix([ts])*sp.Matrix(xs))[0] # multipy ts's * xs's ( ts * xs.T )
+    g = 1 / (1+mp.e**-h)   # wrap h in sigmoid
+    c = -y*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
+
+    log.info ('g: %s',g)
+    log.info ('c: %s',c)
+    log.info ('tMatrix: %s',trainingMatrix)
+    log.info ('yArr: %s',yArr)
+    log.warn('columns: %s',labels)
+    grad_descent4(g,c,trainingMatrix,yArr)
+    print 'done'
+
+    
 # store weights in theta[array] ?
 # store xparams also in matrix
 # store yresults in vector
@@ -104,4 +164,5 @@ log.basicConfig(level=log.WARN)
 log.info('start %s'%(log.getLogger().level))
 
 #testLR()
-testLR2()
+#testLR2()
+testGaga()
