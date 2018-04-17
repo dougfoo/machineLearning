@@ -12,48 +12,51 @@ def setupTestData():
     df = pandas.read_csv('fakeGagaData.dat')
     return df
 
-def getGagaData(size=0.33):
+def getGagaData(maxrows=200,maxfeatures=4000):
     import random, sklearn
     import sklearn.feature_extraction.text
     import sklearn.naive_bayes
 
-    TRAIN_PCT=size   # how much of our input will we reserve for test
-
-    def append_data(ds,dir,label):
+    def append_data(ds,dir,label,size):
         filenames=os.listdir(dir)
-        for fn in filenames:
+        for i,fn in enumerate(filenames):
+            if (i>=size):
+                break            
             data=open(dir+'/'+fn,'r').read()
             ds.append((data,label))
         return ds
 
     ######## Load the raw data
     dataset=[]
-    append_data(dataset,'ml/lyrics/gaga','gaga')
-    append_data(dataset,'ml/lyrics/clash','clash')
+    append_data(dataset,'ml/lyrics/gaga',1,maxrows/2)
+    append_data(dataset,'ml/lyrics/clash',0,maxrows/2)
 
-    ######## Partition the data into training set and test set
-    random.shuffle(dataset)
-    partition=int(TRAIN_PCT*len(dataset))
-    dataset=dataset[:partition]
-    testset=dataset[partition:]
-
-    print("gaga test set %i docs, training set %i docs" % (len(testset),len(dataset)))
+    print ('ds:',len(dataset))
+    print("gaga test set %i docs, training set %i docs" % (len(dataset),len(dataset)))
 
     ######## Train the algorithm with the labelled examples (training set)
     data,target=zip(*dataset)
     vec=sklearn.feature_extraction.text.CountVectorizer()
     mat=vec.fit_transform(data)
     yarr = list(target)
+
     data = mat.toarray()
-    labels = vec.get_feature_names()
+    labels = vec.get_feature_names()[0:maxfeatures]
+
+    # hack trim
+    if (maxfeatures > len(data[0])):
+        maxfeatures = len(data[0]) 
+    data = data[:,0:maxfeatures]
+#    print('slice:',data)
+#    print (data.shape)
     return data,yarr,labels
 
 
 # generic solver takes in hypothesis function, cost func, training matrix, theta array, yarray
 def grad_descent4(hFunc, cFunc, trainingMatrix, yArr):
     guesses = [0.1]*len(trainingMatrix[0])    # initial guess for all 
-    step = 0.01          # init step
-    step_limit = 0.001   # when to stop, when cost stops changing
+    step = 0.05          # init step
+    step_limit = 0.00001   # when to stop, when cost stops changing
     loop_limit = 50      # arbitrary max limits
     costChange = 1.0
 
@@ -123,16 +126,17 @@ def testLR2():
     g = 1 / (1+mp.e**-h)   # wrap h in sigmoid
     c = -y*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
 
-    log.info ('g: %s',g)
-    log.info ('c: %s',c)
-    log.info ('tMatrix: %s',trainingMatrix)
-    log.info ('yArr: %s',yArr)
+    log.warn ('g: %s',g)
+    log.warn ('c: %s',c)
+    log.warn ('tMatrix: %s',trainingMatrix)
+    log.warn ('yArr: %s',yArr)
     log.warn('columns: %s',df.head(0))
     grad_descent4(g,c,trainingMatrix,yArr)
     print 'done'
 
+# test with mike eng's dataset
 def testGaga():
-    trainingMatrix,yArr,labels = getGagaData(0.01)
+    trainingMatrix,yArr,labels = getGagaData(maxrows=50,maxfeatures=20)
 
     log.debug (trainingMatrix)
     log.debug (yArr)
