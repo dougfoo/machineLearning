@@ -20,28 +20,23 @@ def grad_descent4(hFunc, cFunc, trainingMatrix, yArr):
     loop_limit = 50      # arbitrary max limits
     costChange = 1.0
 
-    log.warn ('init guesses %s',str(guesses))
-    log.warn ('init func: %s, training size: %d' %(str(hFunc),trainingMatrix.shape[0]))
-
     # TODO do i really need these 2 here... pass them in?
     ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
     xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
     
-    log.warn('ts %s',ts)
-    log.warn('xs %s',xs)
+    log.warn('init guesses %s',str(guesses))
+    log.warn('init func: %s, training size: %d' %(str(hFunc),trainingMatrix.shape[0]))
+    log.debug('ts: %s / xs: %s',ts,xs)
 
     costF = evalSumF2(cFunc,xs,trainingMatrix,yArr)  # cost fun evaluted for testData
-    log.warn('init costF %s',str(costF)[:80]) # show first 80 char of cost evaluation
     cost = 0.0+costF.subs(zip(ts,guesses))  
-    log.warn('init cost %f %s',cost,type(cost))
+    log.warn('init cost: %f, costF %s',cost,str(costF)) # show first 80 char of cost evaluation
 
     i=0  
     while (abs(costChange) > step_limit and i<loop_limit):  # arbitrary limiter
-        j=0
-        for theta in ts:
+        for j,theta in enumerate(ts):
             pd = evalPartialDeriv2(cFunc,theta,ts,xs,trainingMatrix,guesses,yArr)
             guesses[j] = guesses[j] - step * pd
-            j+=1
         previousCost = cost
         cost = costF.subs(zip(ts,guesses))
         costChange = previousCost-cost
