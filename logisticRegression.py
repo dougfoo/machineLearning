@@ -12,10 +12,9 @@ def setupTestData():
     df = pandas.read_csv('fakeGagaData.dat')
     return df
 
+# pull in ml/* lady gaga/class music text data
 def getGagaData(maxrows=200,maxfeatures=4000):
-    import random, sklearn
-    import sklearn.feature_extraction.text
-    import sklearn.naive_bayes
+    import random, sklearn, sklearn.feature_extraction.text, sklearn.naive_bayes
 
     def append_data(ds,dir,label,size):
         filenames=os.listdir(dir)
@@ -31,15 +30,13 @@ def getGagaData(maxrows=200,maxfeatures=4000):
     append_data(dataset,'ml/lyrics/gaga',1,maxrows/2)
     append_data(dataset,'ml/lyrics/clash',0,maxrows/2)
 
-    print ('ds:',len(dataset))
-    print("gaga test set %i docs, training set %i docs" % (len(dataset),len(dataset)))
+    log.debug("gaga test set %i docs, training set %i docs" % (len(dataset),len(dataset)))
 
     ######## Train the algorithm with the labelled examples (training set)
     data,target=zip(*dataset)
     vec=sklearn.feature_extraction.text.CountVectorizer()
     mat=vec.fit_transform(data)
     yarr = list(target)
-
     data = mat.toarray()
     labels = vec.get_feature_names()[0:maxfeatures]
 
@@ -47,14 +44,13 @@ def getGagaData(maxrows=200,maxfeatures=4000):
     if (maxfeatures > len(data[0])):
         maxfeatures = len(data[0]) 
     data = data[:,0:maxfeatures]
-#    print('slice:',data)
-#    print (data.shape)
+
     return data,yarr,labels
 
 
 # generic solver takes in hypothesis function, cost func, training matrix, theta array, yarray
 def grad_descent4(hFunc, cFunc, trainingMatrix, yArr):
-    guesses = [0.1]*len(trainingMatrix[0])    # initial guess for all 
+    guesses = [0.01]*len(trainingMatrix[0])    # initial guess for all 
     step = 0.05          # init step
     step_limit = 0.00001   # when to stop, when cost stops changing
     loop_limit = 50      # arbitrary max limits
@@ -80,9 +76,14 @@ def grad_descent4(hFunc, cFunc, trainingMatrix, yArr):
         previousCost = cost
         cost = costF.subs(zip(ts,guesses))
         costChange = previousCost-cost
-        log.warn('i=%d,costChange=%f,cost=%f, guesses=%s'%(i, costChange,cost,str(guesses)))
+        log.warn('i=%d,costChange=%f,cost=%f, guesses=%s'%(i, costChange,cost,gf(guesses)))
         i=i+1
     return guesses
+
+#guess array formatter to 4d%f
+def gf(guesses):
+    return ["{:0.4f}".format(g) for g in guesses]
+
 
 # expnd to avg(sum(evaluated for testData)) 
 def evalSumF2(f,xs,trainingMatrix,yArr):  # @TODO change testData to matrix
@@ -136,7 +137,7 @@ def testLR2():
 
 # test with mike eng's dataset
 def testGaga():
-    trainingMatrix,yArr,labels = getGagaData(maxrows=50,maxfeatures=20)
+    trainingMatrix,yArr,labels = getGagaData(maxrows=300,maxfeatures=20)
 
     log.debug (trainingMatrix)
     log.debug (yArr)
@@ -149,13 +150,38 @@ def testGaga():
     g = 1 / (1+mp.e**-h)   # wrap h in sigmoid
     c = -y*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
 
-    log.info ('g: %s',g)
-    log.info ('c: %s',c)
-    log.info ('tMatrix: %s',trainingMatrix)
-    log.info ('yArr: %s',yArr)
+    log.warn ('g: %s',g)
+    log.warn ('c: %s',c)
+    log.warn ('tMatrix: %s',trainingMatrix)
+    log.warn ('yArr: %s',yArr)
     log.warn('columns: %s',labels)
     grad_descent4(g,c,trainingMatrix,yArr)
     print 'done'
+
+def testFeatureCleanup():
+    trainingMatrix,yArr,labels = getGagaData()
+    numpy.set_printoptions(linewidth=163)
+    numpy.set_printoptions(threshold='nan')
+#    print trainingMatrix
+
+    # efficient way to iterate columns?
+    counts = {0:0}
+    words = {}
+    for i,col in enumerate(trainingMatrix.T):
+        sum = numpy.sum(col)
+        if (sum not in counts):
+            counts[sum] = 1
+        else:
+            counts[sum] = counts[sum] + 1
+        words[labels[i]+'-'+str(i)] = sum
+
+    print (counts)
+    import operator
+    sorted_words = sorted(words.items(), key=operator.itemgetter(1))
+    for s,t in sorted_words:
+        print (s,t)
+
+
 
     
 # store weights in theta[array] ?
@@ -169,4 +195,5 @@ log.info('start %s'%(log.getLogger().level))
 
 #testLR()
 #testLR2()
-testGaga()
+#testGaga()
+testFeatureCleanup()
