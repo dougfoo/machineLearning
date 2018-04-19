@@ -8,10 +8,6 @@ from sklearn.utils import shuffle
 from mpmath import *
 import logging as log
 
-def setupTestData():
-    df = pandas.read_csv('fakeGagaData.dat')
-    return df
-
 # copied code from meng - pull in songclass/* lady gaga/class music text data
 def getGagaData(maxrows=200,maxfeatures=4000):
     import random, sklearn, sklearn.feature_extraction.text, sklearn.naive_bayes
@@ -40,38 +36,13 @@ def getGagaData(maxrows=200,maxfeatures=4000):
     data = mat.toarray()
     labels = vec.get_feature_names()[0:maxfeatures]
 
-    # hack trim
+    # hack trim features by 'maxfeature' param
     if (maxfeatures > len(data[0])):
         maxfeatures = len(data[0]) 
     data = data[:,0:maxfeatures]
 
     return data,yarr,labels
 
-# test Logistic Regression v2
-def testLR2():
-    df = setupTestData()
-    trainingMatrix = df.iloc[:,2:7].as_matrix()
-    yArr = df.iloc[:,7:8].as_matrix()
-
-    log.debug (df)
-    log.debug (trainingMatrix)
-    log.debug (yArr)
-
-    ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
-    xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
-
-    c,g,h,y = sp.symbols('c g h y')
-    h = (sp.Matrix([ts])*sp.Matrix(xs))[0] # multipy ts's * xs's ( ts * xs.T )
-    g = 1 / (1+mp.e**-h)   # wrap h in sigmoid
-    c = -y*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
-
-    log.warn ('g: %s',g)
-    log.warn ('c: %s',c)
-    log.warn ('tMatrix: %s',trainingMatrix)
-    log.warn ('yArr: %s',yArr)
-    log.warn('columns: %s',df.head(0))
-    grad_descent4(g,c,trainingMatrix,yArr)
-    print 'done'
 
 # test with mike eng's dataset
 def testGaga():
@@ -94,9 +65,31 @@ def testGaga():
     log.warn ('yArr: %s',yArr)
     log.warn('columns: %s',labels)
     grad_descent4(g,c,trainingMatrix,yArr)
-    print 'done'
+
+def testFeatureCleanup():
+    trainingMatrix,yArr,labels = getGagaData()
+    numpy.set_printoptions(linewidth=163)
+    numpy.set_printoptions(threshold='nan')
+
+    counts = {0:0}
+    words = {}
+    for i,col in enumerate(trainingMatrix.T):
+        sum = numpy.sum(col)
+        if (sum not in counts):
+            counts[sum] = 1
+        else:
+            counts[sum] = counts[sum] + 1
+        words[labels[i]+'-'+str(i)] = sum
+
+    print (counts)
+    import operator
+    sorted_words = sorted(words.items(), key=operator.itemgetter(1))
+    for s,t in sorted_words:
+        print (s,t)
 
 log.basicConfig(level=log.WARN)
 log.info('start %s'%(log.getLogger().level))
+#testLR()
 #testLR2()
-testGaga()
+#testGaga()
+testFeatureCleanup()
