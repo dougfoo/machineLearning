@@ -5,11 +5,10 @@ from sympy.core.compatibility import as_int
 import sympy.concrete.summations as sum
 from myutils import *
 from sklearn.utils import shuffle
-from mpmath import *
 import logging as log
 
 # copied code from meng - pull in songclass/* lady gaga/class music text data
-def getGagaData(maxrows=200,maxfeatures=4000):
+def getGagaData(maxrows=200,maxfeatures=4000,gtype=None):
     import random, sklearn, sklearn.feature_extraction.text, sklearn.naive_bayes
 
     def append_data(ds,dir,label,size):
@@ -23,8 +22,10 @@ def getGagaData(maxrows=200,maxfeatures=4000):
 
     ######## Load the raw data
     dataset=[]
-    append_data(dataset,'songclass/lyrics/gaga',1,maxrows/2)
-    append_data(dataset,'songclass/lyrics/clash',0,maxrows/2)
+    if (gtype == 1 or gtype == None):
+        append_data(dataset,'songclass/lyrics/gaga',1,maxrows/2)
+    if (gtype == 0 or gtype == None):     
+        append_data(dataset,'songclass/lyrics/clash',0,maxrows/2)
 
     log.debug("gaga test set %i docs, training set %i docs" % (len(dataset),len(dataset)))
 
@@ -43,49 +44,39 @@ def getGagaData(maxrows=200,maxfeatures=4000):
 
     return data,yarr,labels
 
-
-# test with mike eng's dataset
-def testGaga():
-    trainingMatrix,yArr,labels = getGagaData(maxrows=300,maxfeatures=20)
-
-    log.debug (trainingMatrix)
-    log.debug (yArr)
-
-    ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
-    xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
-
-    c,g,h,y = sp.symbols('c g h y')
-    h = (sp.Matrix([ts])*sp.Matrix(xs))[0] # multipy ts's * xs's ( ts * xs.T )
-    g = 1 / (1+mp.e**-h)   # wrap h in sigmoid
-    c = -y*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
-
-    log.warn ('g: %s',g)
-    log.warn ('c: %s',c)
-    log.warn ('tMatrix: %s',trainingMatrix)
-    log.warn ('yArr: %s',yArr)
-    log.warn('columns: %s',labels)
-    grad_descent4(g,c,trainingMatrix,yArr)
-
+# test feature analysis/cleanup
 def testFeatureCleanup():
-    trainingMatrix,yArr,labels = getGagaData()
     numpy.set_printoptions(linewidth=163)
     numpy.set_printoptions(threshold='nan')
 
-    counts = {0:0}
-    words = {}
-    for i,col in enumerate(trainingMatrix.T):
-        sum = numpy.sum(col)
-        if (sum not in counts):
-            counts[sum] = 1
-        else:
-            counts[sum] = counts[sum] + 1
-        words[labels[i]+'-'+str(i)] = sum
+    trainingMatrix1,yArr1,labels1 = getGagaData(gtype=0)
+    trainingMatrix2,yArr2,labels2 = getGagaData(gtype=1)
 
-    print (counts)
-    import operator
-    sorted_words = sorted(words.items(), key=operator.itemgetter(1))
-    for s,t in sorted_words:
-        print (s,t)
+    def countWords(trainingMatrix, labels):
+        counts = {0:0}
+        words = {}
+        for i,col in enumerate(trainingMatrix.T):   # transpose to inspect word by word
+            sum = numpy.sum(col)
+            if (sum not in counts):
+                counts[sum] = 1
+            else:
+                counts[sum] = counts[sum] + 1
+            words[labels[i]+'  ['+str(i)+']'] = sum
+
+        print (i, counts)
+        import operator
+        sorted_words = sorted(words.items(), key=operator.itemgetter(1))
+        m=numpy.asmatrix(sorted_words)      
+        return m
+
+    mGaga = countWords(trainingMatrix1, labels1)     
+    mNotGaga =countWords(trainingMatrix2, labels2)
+
+
+#    m = m.reshape(-1,4)
+#    for a in m:
+#        print ('%-25s ct: %-10s %-25s ct:%-10s'%(a.item(0),a.item(1),a.item(2),a.item(3)))
+
 
 log.basicConfig(level=log.WARN)
 log.info('start %s'%(log.getLogger().level))
@@ -93,3 +84,4 @@ log.info('start %s'%(log.getLogger().level))
 #testLR2()
 #testGaga()
 testFeatureCleanup()
+ 

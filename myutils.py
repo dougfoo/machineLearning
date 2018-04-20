@@ -67,6 +67,7 @@ def plotLine(ax,A,B,min=0,max=5000):
 
 
 # generic solver takes in hypothesis function, cost func, training matrix, theta array, yarray
+# need to add params for stochastic/batchsize
 def grad_descent4(hFunc, cFunc, trainingMatrix, yArr):
     guesses = [0.01]*len(trainingMatrix[0])    # initial guess for all 
     step = 0.05          # init step

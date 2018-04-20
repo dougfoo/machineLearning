@@ -8,7 +8,7 @@ from sklearn.utils import shuffle
 from mpmath import *
 import logging as log
 
-def setupTestData():
+def getTestData():
     df = pandas.read_csv('fakeGagaData.dat')
     return df
 
@@ -49,7 +49,7 @@ def getGagaData(maxrows=200,maxfeatures=4000):
 
 # test Logistic Regression v2
 def testLR2():
-    df = setupTestData()
+    df = getTestData()
     trainingMatrix = df.iloc[:,2:7].as_matrix()
     yArr = df.iloc[:,7:8].as_matrix()
 
