@@ -51,7 +51,7 @@ def countWords(trainingMatrix, labels, fnames):
 # returns an array of tuples (word, (total #count, total # files))
 def countWords2(trainingMatrix, labels, fnames):
     counts = {0:0}
-    words = {}
+    words = []
     for i,col in enumerate(trainingMatrix.T):   # transpose to inspect word by word
         sum = numpy.sum(col)
         cnt = numpy.count_nonzero(col)
@@ -59,9 +59,8 @@ def countWords2(trainingMatrix, labels, fnames):
             counts[sum] = 1
         else:
             counts[sum] = counts[sum] + 1
-        words[labels[i]] = (sum,cnt)
-    print (i, counts)
-    return words.items()
+        words.append([labels[i],sum,cnt])
+    return words, counts
 
 # test feature analysis/cleanup
 def testFeatureCleanup():
@@ -94,9 +93,9 @@ print len(labels1)  # cols words
 print len(yArr1)    # rows GagaY/N
 print len(fnames1)  # rows filename
 
-g1 = countWords2(trainingMatrix1, labels1, fnames1)
-g2 = countWords2(trainingMatrix2, labels2, fnames2)
+m1,c1 = countWords2(trainingMatrix1, labels1, fnames1)
+m2,c1 = countWords2(trainingMatrix2, labels2, fnames2)
 
-print (g1)
-print (g2)
+print ('word,t-ct,f-ct',m1)
+print ('counts:',c1)
 
