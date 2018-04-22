@@ -2,7 +2,7 @@ import requests, pandas, io, numpy, argparse, math
 import matplotlib.pyplot as plt
 from myutils import *
 
-# copied code from meng - pull in songclass/* lady gaga/class music text data
+# copied code from meng - pull in songclass/* lady gaga/class music text data, returns (training[][],yarr[],labels[],fnames[])
 def getGagaData(maxrows=200,maxfeatures=4000,gtype=None):
     import random, sklearn, sklearn.feature_extraction.text, sklearn.naive_bayes
     def append_data(ds,dir,label,size):
@@ -34,21 +34,6 @@ def getGagaData(maxrows=200,maxfeatures=4000,gtype=None):
     data = data[:,0:maxfeatures]
     return data,yarr,labels,fnames
 
-def countWords(trainingMatrix, labels, fnames):
-    counts = {0:0}
-    words = {}
-    for i,col in enumerate(trainingMatrix.T):   # transpose to inspect word by word
-        sum = numpy.sum(col)
-        if (sum not in counts):
-            counts[sum] = 1
-        else:
-            counts[sum] = counts[sum] + 1
-        words[labels[i]+'  ['+str(i)+']'] = sum
-    print (i, counts)
-    import operator
-    sorted_words = sorted(words.items(), key=operator.itemgetter(1))
-    return numpy.asmatrix(sorted_words)      
-
 # returns 2 items, [word,ct,file-ct],[#times:count]
 def countWords2(trainingMatrix, labels, fnames):
     counts = {0:0}
@@ -72,51 +57,70 @@ def mergeCounts(m1,m2):
     cols = list(set(g1.columns).intersection(g2.columns))
     results = pandas.merge(g1, g2, how='outer', left_on=cols, right_on=cols)
     results = results.fillna(0)
-    results['gct-delta'] = results['gct'] - results['nct']
-    results['gfct-delta'] = results['gfct'] - results['nfct']
+    results['gct-delta'] = results['nct'] - results['gct']
+    results['gfct-delta'] = results['nfct'] - results['gfct']
     return results
 
 # test feature analysis/cleanup
-def testFeatureCleanup():
-    numpy.set_printoptions(linewidth=163)
-    numpy.set_printoptions(threshold='nan')
+def testScikitFeatureCleanup():
+    trainingMatrix1,yArr,labels,fnames = getGagaData(maxrows=200)
+    t1 = numpy.array(trainingMatrix1)
 
-    return 
+    # VarianceThreadhold
+    print (t1.shape)
+    from sklearn.feature_selection import VarianceThreshold
+    model = VarianceThreshold(threshold=(.8 * (1 - .8)))
+    m = model.fit_transform(t1)
+    print ('Variance .8',m.shape)
+    picklist = model.get_support(True)
+    pickwords = [labels[p] for p in picklist]
+    print (pickwords)
 
+    # SelectKBest
+    from sklearn.feature_selection import SelectKBest
+    from sklearn.feature_selection import chi2
+    X, y = t1, yArr
+    print(X.shape)
+    model = SelectKBest(chi2, k=50)
+    X_new = model.fit_transform(X, y)   # need to keep labels
+    print('KBest',X_new.shape)
+    df = pandas.DataFrame(X_new)
+    print (df.head())
+    picklist = model.get_support(True)
+    pickwords = [labels[p] for p in picklist]
+    print (pickwords)
 
-#    m = m.reshape(-1,4)
-#    for a in m:
-#        print ('%-25s ct: %-10s %-25s ct:%-10s'%(a.item(0),a.item(1),a.item(2),a.item(3)))
+    return m
 
+def testFeatureAnalysis():
+    trainingMatrix1,yArr1,labels1,fnames1 = getGagaData(gtype=0)
+    trainingMatrix2,yArr2,labels2,fnames2 = getGagaData(gtype=1)
+
+    m1,c1 = countWords2(trainingMatrix1, labels1, fnames1)
+    m2,c2 = countWords2(trainingMatrix2, labels2, fnames2)
+
+    print ('word,t-ct,f-ct',m1)
+    print ('counts:',c1)
+
+    m = mergeCounts(m1,m2)
+
+    print (m.shape)
+    print (pandas.concat([m.head(),m.tail()]))
+
+    m = m.sort_values('gct-delta')
+    print ('top/bot # variance of # words')
+    print (pandas.concat([m.head(),m.tail()]))
+
+    print ('top/bot # variance of # words (once per file)')
+    m = m.sort_values('gfct-delta')
+    print (pandas.concat([m.head(),m.tail()]))
+
+    return m
 
 log.basicConfig(level=log.WARN)
 log.info('start %s'%(log.getLogger().level))
-#testLR()
-#testLR2()
-#testGaga()
-testFeatureCleanup()
-
 numpy.set_printoptions(linewidth=163)
 numpy.set_printoptions(threshold='nan')
+mF = testFeatureAnalysis()
+sF = testScikitFeatureCleanup()
 
-trainingMatrix1,yArr1,labels1,fnames1 = getGagaData(gtype=0)
-trainingMatrix2,yArr2,labels2,fnames2 = getGagaData(gtype=1)
-
-m1,c1 = countWords2(trainingMatrix1, labels1, fnames1)
-m2,c2 = countWords2(trainingMatrix2, labels2, fnames2)
-
-print ('word,t-ct,f-ct',m1)
-print ('counts:',c1)
-
-m = mergeCounts(m1,m2)
-
-print (m.shape)
-print (pandas.concat([m.head(),m.tail()]))
-
-m = m.sort_values('gct-delta')
-print ('top/bot # variance of # words')
-print (pandas.concat([m.head(),m.tail()]))
-
-print ('top/bot # variance of # words (once per file)')
-m = m.sort_values('gfct-delta')
-print (pandas.concat([m.head(),m.tail()]))
