@@ -12,7 +12,8 @@ def getGagaData(maxrows=200,maxfeatures=4000,gtype=None):
                 break            
             data=open(dir+'/'+fn,'r').read()
             ds.append((data,label,fn))
-        return ds
+        return ds### Lady Gaga 
+
     ######## Load the raw data
     dataset=[]
     if (gtype == 1 or gtype == None):
@@ -48,7 +49,7 @@ def countWords(trainingMatrix, labels, fnames):
     sorted_words = sorted(words.items(), key=operator.itemgetter(1))
     return numpy.asmatrix(sorted_words)      
 
-# returns an array of tuples (word, (total #count, total # files))
+# returns 2 items, [word,ct,file-ct],[#times:count]
 def countWords2(trainingMatrix, labels, fnames):
     counts = {0:0}
     words = []
@@ -61,6 +62,19 @@ def countWords2(trainingMatrix, labels, fnames):
             counts[sum] = counts[sum] + 1
         words.append([labels[i],sum,cnt])
     return words, counts
+
+# take in 2 list[][] and merge on 1st column, fill Nan's with 0, add deltas, return DataFrame
+def mergeCounts(m1,m2):
+    #combine m1,m2 outer join
+    g1 = pandas.DataFrame.from_records(m1,columns=['word','gct','gfct'])
+    g2 = pandas.DataFrame.from_records(m2,columns=['word','nct','nfct'])
+
+    cols = list(set(g1.columns).intersection(g2.columns))
+    results = pandas.merge(g1, g2, how='outer', left_on=cols, right_on=cols)
+    results = results.fillna(0)
+    results['gct-delta'] = results['gct'] - results['nct']
+    results['gfct-delta'] = results['gfct'] - results['nfct']
+    return results
 
 # test feature analysis/cleanup
 def testFeatureCleanup():
@@ -88,14 +102,21 @@ numpy.set_printoptions(threshold='nan')
 trainingMatrix1,yArr1,labels1,fnames1 = getGagaData(gtype=0)
 trainingMatrix2,yArr2,labels2,fnames2 = getGagaData(gtype=1)
 
-print trainingMatrix1.shape  # counts
-print len(labels1)  # cols words
-print len(yArr1)    # rows GagaY/N
-print len(fnames1)  # rows filename
-
 m1,c1 = countWords2(trainingMatrix1, labels1, fnames1)
-m2,c1 = countWords2(trainingMatrix2, labels2, fnames2)
+m2,c2 = countWords2(trainingMatrix2, labels2, fnames2)
 
 print ('word,t-ct,f-ct',m1)
 print ('counts:',c1)
 
+m = mergeCounts(m1,m2)
+
+print (m.shape)
+print (pandas.concat([m.head(),m.tail()]))
+
+m = m.sort_values('gct-delta')
+print ('top/bot # variance of # words')
+print (pandas.concat([m.head(),m.tail()]))
+
+print ('top/bot # variance of # words (once per file)')
+m = m.sort_values('gfct-delta')
+print (pandas.concat([m.head(),m.tail()]))
