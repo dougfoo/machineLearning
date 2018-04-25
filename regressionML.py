@@ -31,7 +31,7 @@ def evalPartialDeriv(f,x,y,testData,v,guessV,o,guessO):
     return pceval
 
 # semi-hard coded batch solver for f(x,y) given data series testData, start w/ guess, solve cost, iterate cost+/-partialDerivs
-def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None, t='grad_desc'):
+def grad_descent2(f, testData=setupBrainData(), pltAx=False, batchSize=None, t='grad_desc'):
     guessA = guessB = 1.0   #initial guess y=1x+1
 
     stepA = 0.00000005   #dif step for diff A,B ?
@@ -95,7 +95,7 @@ def grad_descent2(f, testData=setupData(), pltAx=False, batchSize=None, t='grad_
 
 # test normal gradient descent
 def testGD(plt=False, gd=grad_descent2, bs=None, ts=None, t=None):
-    d = setupData(ts)
+    d = setupBrainData(ts)
     A,B,x = sp.symbols('A B x')
     f = A*x + B  # linear func y=mx+b
 
@@ -116,7 +116,7 @@ def plotGradientRun():
     plt.ion()
 
     #scatter of test pts
-    df2 = setupData()
+    df2 = setupBrainData()
     for _,row in df2.iterrows():
         x= row['head_size']
         y= row['brain_weight']

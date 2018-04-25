@@ -1,5 +1,6 @@
 import time, itertools, os,requests, pandas, io
 import matplotlib.pyplot as plt
+from sklearn.utils import shuffle
 import logging as log
 import sympy as sp
 
@@ -19,10 +20,10 @@ def churn(d, n):
     return d
 
 #guess array formatter to 4d%f
-def gf(guesses):
-    return ["{:0.4f}".format(g) for g in guesses]
+def gf(guesses,scale=1):
+    return ["{:0.4f}".format(g*scale) for g in guesses]
 
-def setupData(max=1000):
+def setupBrainData(max=1000):
     if (os.path.isfile("myDataFrame.csv")):
         print 'reading cache copy from disk'
         return pandas.read_csv('myDataFrame.csv').head(max)    
@@ -37,7 +38,7 @@ def setupData(max=1000):
 #replicate/grow data
 def makeFakeData():
     print('setup expanded datasets (dfs[])')
-    df = setupData()
+    df = setupBrainData()
     dfs = [df,churn(df,4),churn(df,8),churn(df,12),churn(df,16)]        
     for d in dfs:
         print (d.shape)
@@ -67,13 +68,12 @@ def plotLine(ax,A,B,min=0,max=5000):
 
 
 # generic solver takes in hypothesis function, cost func, training matrix, theta array, yarray
-# need to add params for stochastic/batchsize
-def grad_descent4(hFunc, cFunc, trainingMatrix, yArr):
+# need to add params for stochastic/batchsize 
+def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, step_limit=0.00001, scale=1, batchSize=None):
     guesses = [0.01]*len(trainingMatrix[0])    # initial guess for all 
-    step = 0.05          # init step
-    step_limit = 0.00001   # when to stop, when cost stops changing
-    loop_limit = 50      # arbitrary max limits
     costChange = 1.0
+    if (batchSize == None):
+        batchSize = len(trainingMatrix)  #@todo can i set this in func param
 
     # TODO do i really need these 2 here... pass them in?
     ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
@@ -87,19 +87,31 @@ def grad_descent4(hFunc, cFunc, trainingMatrix, yArr):
     cost = 0.0+costF.subs(zip(ts,guesses))  
     log.warn('init cost: %f, costF %s',cost,str(costF)) # show first 80 char of cost evaluation
 
-    i=0  
-    while (abs(costChange) > step_limit and i<loop_limit):  # arbitrary limiter
-        for j,theta in enumerate(ts):
-            pd = evalPartialDeriv2(cFunc,theta,ts,xs,trainingMatrix,guesses,yArr)
-            guesses[j] = guesses[j] - step * pd
-        previousCost = cost
-        cost = costF.subs(zip(ts,guesses))
-        costChange = previousCost-cost
-        log.warn('i=%d,costChange=%f,cost=%f, guesses=%s'%(i, costChange,cost,gf(guesses)))
-        i=i+1
+    trainingMatrix = shuffle(trainingMatrix, random_state=0)
+
+    i=j=l=0
+    while (abs(costChange) > step_limit and l<loop_limit):  # outer loop batch chunk
+        i=j=k=0
+        k = j+batchSize if j+batchSize<len(trainingMatrix) else len(trainingMatrix)
+        dataBatch = trainingMatrix[j:k]
+
+        while (i < len(trainingMatrix)/batchSize):  # inner batch size loop, min 1x loop
+            for t,theta in enumerate(ts):
+                pd = evalPartialDeriv2(cFunc,theta,ts,xs,dataBatch,guesses,yArr)
+                guesses[t] = guesses[t] - step * pd
+            previousCost = cost
+            cost = costF.subs(zip(ts,guesses))
+            costChange = previousCost-cost
+            log.warn('l=%d,costChange=%f,cost=%f, guesses=%s'%(l, costChange,cost,gf(guesses,scale)))
+
+            j = k
+            k = j+batchSize if j+batchSize<len(trainingMatrix) else len(trainingMatrix)
+            dataBatch = trainingMatrix[j:k]
+            i += 1
+            l += 1
     return guesses
 
-# expnd to avg(sum(evaluated for testData)) 
+# expnd to avg(sum(f evaluated for xs,testData,yarr)) 
 def evalSumF2(f,xs,trainingMatrix,yArr):  # @TODO change testData to matrix
     assert (len(xs) == len(trainingMatrix[0]))
     assert (len(trainingMatrix) == len(yArr))
