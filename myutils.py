@@ -25,7 +25,7 @@ def gf(guesses,scale=1):
 
 def setupBrainData(max=1000):
     if (os.path.isfile("myDataFrame.csv")):
-        print 'reading cache copy from disk'
+        log.warn('reading cache copy from disk')
         return pandas.read_csv('myDataFrame.csv').head(max)    
     url='http://www.stat.ufl.edu/~winner/data/brainhead.dat'
     data=requests.get(url)
@@ -94,10 +94,11 @@ def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, 
         i=j=k=0
         k = j+batchSize if j+batchSize<len(trainingMatrix) else len(trainingMatrix)
         dataBatch = trainingMatrix[j:k]
+        yBatch = yArr[j:k]
 
         while (i < len(trainingMatrix)/batchSize):  # inner batch size loop, min 1x loop
             for t,theta in enumerate(ts):
-                pd = evalPartialDeriv2(cFunc,theta,ts,xs,dataBatch,guesses,yArr)
+                pd = evalPartialDeriv2(cFunc,theta,ts,xs,dataBatch,guesses,yBatch)
                 guesses[t] = guesses[t] - step * pd
             previousCost = cost
             cost = costF.subs(zip(ts,guesses))
@@ -107,6 +108,7 @@ def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, 
             j = k
             k = j+batchSize if j+batchSize<len(trainingMatrix) else len(trainingMatrix)
             dataBatch = trainingMatrix[j:k]
+            yBatch = yArr[j:k]
             i += 1
             l += 1
     return guesses
