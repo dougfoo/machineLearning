@@ -45,7 +45,7 @@ def getGagaData(maxrows=200,maxfeatures=4000):
         maxfeatures = len(data[0]) 
     data = data[:,0:maxfeatures]
 
-    return data,yarr,labels
+    return data,yarr,labels #ndarray, array, array
 
 # test Logistic Regression v2
 def testLR2():

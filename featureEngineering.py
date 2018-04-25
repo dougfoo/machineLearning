@@ -45,14 +45,28 @@ def countWords2(trainingMatrix, labels, fnames):
             counts[sum] = 1
         else:
             counts[sum] = counts[sum] + 1
-        words.append([labels[i],sum,cnt])
+        words.append([i,labels[i],sum,cnt])
+    return words, counts
+
+# returns 3 items, [index,count,fcount] countMap{}
+def countWords(trainingMatrix):
+    counts = {0:0}
+    words = []
+    for i,col in enumerate(trainingMatrix.T):   # transpose to inspect word by word
+        sum = numpy.sum(col)
+        cnt = numpy.count_nonzero(col)
+        if (sum not in counts):
+            counts[sum] = 1
+        else:
+            counts[sum] = counts[sum] + 1
+        words.append([i,sum,cnt])
     return words, counts
 
 # take in 2 list[][] and merge on 1st column, fill Nan's with 0, add deltas, return DataFrame
 def mergeCounts(m1,m2):
     #combine m1,m2 outer join
-    g1 = pandas.DataFrame.from_records(m1,columns=['word','gct','gfct'])
-    g2 = pandas.DataFrame.from_records(m2,columns=['word','nct','nfct'])
+    g1 = pandas.DataFrame.from_records(m1,columns=['i','word','gct','gfct'])
+    g2 = pandas.DataFrame.from_records(m2,columns=['i','word','nct','nfct'])
 
     cols = list(set(g1.columns).intersection(g2.columns))
     results = pandas.merge(g1, g2, how='outer', left_on=cols, right_on=cols)

@@ -20,8 +20,8 @@ def churn(d, n):
     return d
 
 #guess array formatter to 4d%f
-def gf(guesses,scale=1):
-    return ["{:0.4f}".format(g*scale) for g in guesses]
+def gf(guesses):
+    return ["{:0.4f}".format(g) for g in guesses]
 
 def setupBrainData(max=1000):
     if (os.path.isfile("myDataFrame.csv")):
@@ -69,17 +69,18 @@ def plotLine(ax,A,B,min=0,max=5000):
 
 # generic solver takes in hypothesis function, cost func, training matrix, theta array, yarray
 # need to add params for stochastic/batchsize 
-def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, step_limit=0.00001, scale=1, batchSize=None):
+def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, step_limit=0.00001, batchSize=None):
     guesses = [0.01]*len(trainingMatrix[0])    # initial guess for all 
     costChange = 1.0
     if (batchSize == None):
-        batchSize = len(trainingMatrix)  #@todo can i set this in func param
+        batchSize = len(trainingMatrix)  #@todo can i set this in func param, or reduce to single expr
+    batchSize = min(len(trainingMatrix),batchSize)
 
     # TODO do i really need these 2 here... pass them in?
     ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
     xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
     
-    log.warn('init guesses %s',str(guesses))
+    log.warn('init guesses %s'%(str(guesses)))
     log.warn('init func: %s, training size: %d' %(str(hFunc),trainingMatrix.shape[0]))
     log.debug('ts: %s / xs: %s',ts,xs)
 
@@ -95,6 +96,7 @@ def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, 
         k = j+batchSize if j+batchSize<len(trainingMatrix) else len(trainingMatrix)
         dataBatch = trainingMatrix[j:k]
         yBatch = yArr[j:k]
+        log.debug('outer - batch %d, j: %d, k: %d'%(len(dataBatch),j,k))
 
         while (i < len(trainingMatrix)/batchSize):  # inner batch size loop, min 1x loop
             for t,theta in enumerate(ts):
@@ -103,7 +105,7 @@ def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, 
             previousCost = cost
             cost = costF.subs(zip(ts,guesses))
             costChange = previousCost-cost
-            log.warn('l=%d,costChange=%f,cost=%f, guesses=%s'%(l, costChange,cost,gf(guesses,scale)))
+            log.warn('l=%d,bs=%d,costChange=%f,cost=%f, guesses=%s'%(l,batchSize, costChange,cost,gf(guesses)))
 
             j = k
             k = j+batchSize if j+batchSize<len(trainingMatrix) else len(trainingMatrix)
