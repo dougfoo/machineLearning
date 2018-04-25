@@ -175,7 +175,7 @@ def test_grad_descent4(size=4,bs=None,loop=100):
     df['bias'] = 1
     log.warn(df.describe())
     trainingMatrix = df[['bias','head_size']] 
-    trainingMatrix['head_size'] = trainingMatrix['head_size'] / 2000  # rough good
+    trainingMatrix['head_size'] = trainingMatrix['head_size'] / 2000  # so what does that do???
     log.warn(trainingMatrix.describe())
     trainingMatrix = trainingMatrix.as_matrix()  #df -> ndarray
     yArr = df['brain_weight']
@@ -212,7 +212,10 @@ def test_grad_descent4(size=4,bs=None,loop=100):
 
 log.basicConfig(level=log.WARN)
 
-'''test_evalSumF2()
+'''
+# running real suite
+log.basicConfig(level=log.ERROR)
+test_evalSumF2()
 test_evalSumF2_1()
 test_evalPartialDeriv2()
 test_grad_descent4_1()
