@@ -12,15 +12,16 @@ def getGagaData(maxrows=200,maxfeatures=4000,gtype=None):
                 break            
             data=open(dir+'/'+fn,'r').read()
             ds.append((data,label,fn))
-        return ds### Lady Gaga 
-
+        return i
     ######## Load the raw data
     dataset=[]
     if (gtype == 1 or gtype == None):
-        append_data(dataset,'songclass/lyrics/gaga',1,maxrows/2)
+        i = append_data(dataset,'songclass/lyrics/gaga',1,maxrows/2)
+        log.warn("gaga test set %i docs"%(i))
     if (gtype == 0 or gtype == None):     
-        append_data(dataset,'songclass/lyrics/clash',0,maxrows/2)
-    log.debug("gaga test set %i docs, training set %i docs" % (len(dataset),len(dataset)))
+        i = append_data(dataset,'songclass/lyrics/clash',0,maxrows/2)
+        log.warn("non gaga test set %i docs"%(i))
+
     ######## Train the algorithm with the labelled examples (training set)
     data,target,fnames=zip(*dataset)
     vec=sklearn.feature_extraction.text.CountVectorizer()
@@ -132,9 +133,9 @@ def testFeatureAnalysis():
     return m
 
 log.basicConfig(level=log.WARN)
-log.info('start %s'%(log.getLogger().level))
+log.warn('start %s'%(log.getLogger().level))
 numpy.set_printoptions(linewidth=163)
 numpy.set_printoptions(threshold='nan')
-mF = testFeatureAnalysis()
-sF = testScikitFeatureCleanup()
+#mF = testFeatureAnalysis()
+#sF = testScikitFeatureCleanup()
 

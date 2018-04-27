@@ -1,6 +1,6 @@
 {
     "python.pythonPath": "/Users/DougFoo/anaconda2/bin/python",
     "python.linting.enabled": true,
-    "python.unitTest.pyTestEnabled": true,
+    "python.unitTest.pyTestEnabled": false,
     "python.linting.pylintPath": "/Users/dougfoo/anaconda2/bin/pylint"
 }

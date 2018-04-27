@@ -1,8 +1,8 @@
 # content of test_sample.py
 # test test
 from myutils import *
-from featureEngineering import *
-
+import featureEngineering as fe
+import pandas
 import numpy as np
 
 def inc(x):
@@ -11,30 +11,40 @@ def inc(x):
 def test_inc():
     assert(4 == inc(3))
 
-def test_gaga_solver():
-    trainingMatrix1,yArr,labels,fnames = getGagaData(maxrows=4)
-    t1 = numpy.array(trainingMatrix1)
+def test_gaga_solver(kFeatures=50,bs=4,ts=10):
+    print 'test gaga solver'
+    trainingMatrix,yArr,labels,fnames = fe.getGagaData(maxrows=ts)
+    t1 = np.array(trainingMatrix)
 
     # SelectKBest
     from sklearn.feature_selection import SelectKBest
     from sklearn.feature_selection import chi2
     X, y = t1, yArr
-    print(X.shape)
-    model = SelectKBest(chi2, k=50)
+    log.warn('Orig size: %s'%(str(X.shape)))
+    model = SelectKBest(chi2, k=kFeatures)
     X_new = model.fit_transform(X, y)   # need to keep labels
-    print('KBest',X_new.shape)
+    log.warn('KBest %d applied %s'%(kFeatures, str(X_new.shape)))
     df = pandas.DataFrame(X_new)
-    print (df.head())
     picklist = model.get_support(True)
     pickwords = [labels[p] for p in picklist]
+
+    # reduce to K features
+    df = pandas.DataFrame(trainingMatrix, columns=labels)
+    df = df[pickwords]
+    print(df.shape)
+    trainingMatrix = df.as_matrix()
+    labels = pickwords
+ 
+    m1,c1 = fe.countWords2(trainingMatrix, labels, fnames)
+    log.warn('reduced matrix: %s'%str(m1))
 
     guesses = [0.01*len(yArr)]
 
     ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
     xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
-
+    xt = sp.Matrix(ts).T * sp.Matrix(xs)
+    f = xt[0]
     y = sp.symbols('y')
-    f = ts[0]*xs[0] + ts[1]*xs[1]
     cFunc = (f - y)**2  # error squared
 
     costF = evalSumF2(cFunc,xs,trainingMatrix,yArr)  # cost fun evaluted for testData
@@ -46,7 +56,7 @@ def test_gaga_solver():
     log.error('init func: %s, training size: %d' %(str(f),len(trainingMatrix)))
     log.warn('ts: %s / xs: %s',ts,xs)
 
-    gs = grad_descent4(f,costF,trainingMatrix,yArr,step=0.01,loop_limit=1000, batchSize=bs)    
+    gs = grad_descent4(f,costF,trainingMatrix,yArr,step=0.0001,step_limit=0.00001,loop_limit=500, batchSize=bs)    
     log.warn('scaled A: %f'%(gs[0]))
     log.warn('scaled B: %f'%(gs[1]))
 
@@ -57,6 +67,5 @@ def test_gaga_solver():
     assert(round(gs[0]) == 11)
     assert(round(gs[1],1) == 1.5)    
 
-
 log.basicConfig(level=log.WARN)
-test_gaga_solver()
+test_gaga_solver(20)
