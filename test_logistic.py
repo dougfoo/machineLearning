@@ -48,24 +48,30 @@ def test_gaga_solver(kFeatures=50,bs=4,ts=10):
     cFunc = (f - y)**2  # error squared
 
     costF = evalSumF2(cFunc,xs,trainingMatrix,yArr)  # cost fun evaluted for testData
-    cost = 0.0+costF.subs(zip(ts,guesses))  
-    log.warn('costF %s'%(str(costF)))
-    log.warn('cost %s'%(str(cost)))
+#    cost = 0.0+costF.subs(zip(ts,guesses))  
 
     log.warn('init guesses %s',str(guesses))
     log.error('init func: %s, training size: %d' %(str(f),len(trainingMatrix)))
     log.warn('ts: %s / xs: %s',ts,xs)
 
-    gs = grad_descent4(f,costF,trainingMatrix,yArr,step=0.0001,step_limit=0.00001,loop_limit=500, batchSize=bs)    
+    gs = grad_descent4(f,costF,trainingMatrix,yArr,step=0.001,step_limit=0.00001,loop_limit=500, batchSize=bs)    
     log.warn('scaled A: %f'%(gs[0]))
     log.warn('scaled B: %f'%(gs[1]))
 
     X = np.asmatrix(trainingMatrix)
     Y = yArr
-    log.warn ('target sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
+    sol = (X.T.dot(X)).I.dot(X.T).dot(Y)
+    sol = np.asarray(sol)[0]
+    log.warn ('target sol (X.T * X)^-1 * X.T*Y:     %s'% str(fe.gf(sol)))
 
-    assert(round(gs[0]) == 11)
-    assert(round(gs[1],1) == 1.5)    
+#    assert(round(gs[0]) == 11)
+#    assert(round(gs[1],1) == 1.5)    
 
 log.basicConfig(level=log.WARN)
-test_gaga_solver(20)
+t = time_fn(test_gaga_solver,25,4,100)
+t2 = time_fn(test_gaga_solver,50,4,100)
+
+print (t)
+print (t2)
+
+
