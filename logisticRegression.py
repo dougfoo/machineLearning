@@ -12,41 +12,6 @@ def getTestData():
     df = pandas.read_csv('fakeGagaData.dat')
     return df
 
-# copied code from meng - pull in songclass/* lady gaga/class music text data
-def getGagaData(maxrows=200,maxfeatures=4000):
-    import random, sklearn, sklearn.feature_extraction.text, sklearn.naive_bayes
-
-    def append_data(ds,dir,label,size):
-        filenames=os.listdir(dir)
-        for i,fn in enumerate(filenames):
-            if (i>=size):
-                break            
-            data=open(dir+'/'+fn,'r').read()
-            ds.append((data,label))
-        return ds
-
-    ######## Load the raw data
-    dataset=[]
-    append_data(dataset,'songclass/lyrics/gaga',1,maxrows/2)
-    append_data(dataset,'songclass/lyrics/clash',0,maxrows/2)
-
-    log.debug("gaga test set %i docs, training set %i docs" % (len(dataset),len(dataset)))
-
-    ######## Train the algorithm with the labelled examples (training set)
-    data,target=zip(*dataset)
-    vec=sklearn.feature_extraction.text.CountVectorizer()
-    mat=vec.fit_transform(data)
-    yarr = list(target)
-    data = mat.toarray()
-    labels = vec.get_feature_names()[0:maxfeatures]
-
-    # hack trim
-    if (maxfeatures > len(data[0])):
-        maxfeatures = len(data[0]) 
-    data = data[:,0:maxfeatures]
-
-    return data,yarr,labels #ndarray, array, array
-
 # test Logistic Regression v2
 def testLR2():
     df = getTestData()
@@ -75,7 +40,7 @@ def testLR2():
 
 # test with mike eng's dataset
 def testGaga():
-    trainingMatrix,yArr,labels = getGagaData(maxrows=300,maxfeatures=20)
+    trainingMatrix,yArr,labels,fnames = getGagaData(maxrows=300,maxfeatures=20)
 
     log.debug (trainingMatrix)
     log.debug (yArr)

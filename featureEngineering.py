@@ -2,38 +2,6 @@ import requests, pandas, io, numpy, argparse, math
 import matplotlib.pyplot as plt
 from myutils import *
 
-# copied code from meng - pull in songclass/* lady gaga/class music text data, returns (training[][],yarr[],labels[],fnames[])
-def getGagaData(maxrows=200,maxfeatures=4000,gtype=None):
-    import random, sklearn, sklearn.feature_extraction.text, sklearn.naive_bayes
-    def append_data(ds,dir,label,size):
-        filenames=os.listdir(dir)
-        for i,fn in enumerate(filenames):
-            if (i>=size):
-                break            
-            data=open(dir+'/'+fn,'r').read()
-            ds.append((data,label,fn))
-        return i
-    ######## Load the raw data
-    dataset=[]
-    if (gtype == 1 or gtype == None):
-        i = append_data(dataset,'songclass/lyrics/gaga',1,maxrows/2)
-        log.warn("gaga test set %i docs"%(i))
-    if (gtype == 0 or gtype == None):     
-        i = append_data(dataset,'songclass/lyrics/clash',0,maxrows/2)
-        log.warn("non gaga test set %i docs"%(i))
-
-    ######## Train the algorithm with the labelled examples (training set)
-    data,target,fnames=zip(*dataset)
-    vec=sklearn.feature_extraction.text.CountVectorizer()
-    mat=vec.fit_transform(data)
-    yarr = list(target)
-    data = mat.toarray()
-    labels = vec.get_feature_names()[0:maxfeatures]
-    # hack trim features by 'maxfeature' param
-    if (maxfeatures > len(data[0])):
-        maxfeatures = len(data[0]) 
-    data = data[:,0:maxfeatures]
-    return data,yarr,labels,fnames
 
 # returns 2 items, [word,ct,file-ct],[#times:count]
 def countWords2(trainingMatrix, labels, fnames):

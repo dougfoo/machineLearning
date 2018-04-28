@@ -13,7 +13,7 @@ def test_inc():
 
 def test_gaga_solver(kFeatures=50,bs=4,ts=10):
     print 'test gaga solver'
-    trainingMatrix,yArr,labels,fnames = fe.getGagaData(maxrows=ts)
+    trainingMatrix,yArr,labels,fnames = fe.getGagaData(maxrows=ts,stopwords='english')
     t1 = np.array(trainingMatrix)
 
     # SelectKBest
@@ -68,8 +68,8 @@ def test_gaga_solver(kFeatures=50,bs=4,ts=10):
 #    assert(round(gs[1],1) == 1.5)    
 
 log.basicConfig(level=log.WARN)
-t = time_fn(test_gaga_solver,25,4,100)
-t2 = time_fn(test_gaga_solver,50,4,100)
+t = time_fn(test_gaga_solver,20,4,100)
+t2 = time_fn(test_gaga_solver,40,4,100)
 
 print (t)
 print (t2)
