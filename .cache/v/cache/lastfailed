@@ -1,4 +1,3 @@
 {
-  "test_logistic.py": true, 
-  "test_myutils.py": true
+  "test_myutils.py::test_grad_descent4": true
 }

@@ -170,4 +170,3 @@ def evalPartialDeriv2(f,theta,ts,xs,trainingMatrix,guesses,yArr):
     pdcost = pdcost.subs(zip(ts,guesses))
     log.info ('    --> pdcost %f ;  %s  ;  %s: '%(pdcost,str(f),str(theta)))
     return pdcost
-
