@@ -50,7 +50,7 @@ def testGaga():
 
     c,g,h,y = sp.symbols('c g h y')
     h = (sp.Matrix([ts])*sp.Matrix(xs))[0] # multipy ts's * xs's ( ts * xs.T )
-    g = 1 / (1+mp.e**-h)   # wrap h in sigmoid
+    g = 1 / (1+mp.e**-h)   # wrap h in sigmoid 
     c = -y*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
 
     log.warn ('g: %s',g)

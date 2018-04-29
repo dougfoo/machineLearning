@@ -3,7 +3,9 @@
 from myutils import *
 import featureEngineering as fe
 import pandas
+from mpmath import *
 import numpy as np
+import logging as log
 
 def inc(x):
     return x + 1
@@ -44,8 +46,10 @@ def test_gaga_solver(kFeatures=50,bs=4,ts=10):
     xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
     xt = sp.Matrix(ts).T * sp.Matrix(xs)
     f = xt[0]
+    g = 1 / (1+mp.e**-f)   # wrap in sigmoid
     y = sp.symbols('y')
-    cFunc = (f - y)**2  # error squared
+    cFunc = -y*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
+#    cFunc = (f - y)**2  # error squared
 
     costF = evalSumF2(cFunc,xs,trainingMatrix,yArr)  # cost fun evaluted for testData
 #    cost = 0.0+costF.subs(zip(ts,guesses))  
@@ -67,16 +71,18 @@ def test_gaga_solver(kFeatures=50,bs=4,ts=10):
 
     # next set the params/weights then test on other testdata !!!
 
-    
+
 
 #    assert(round(gs[0]) == 11)
 #    assert(round(gs[1],1) == 1.5)    
 
 log.basicConfig(level=log.WARN)
-t = time_fn(test_gaga_solver,25,4,100)
-t2 = time_fn(test_gaga_solver,50,4,100)
+test_gaga_solver(5,5,10)
 
-print (t)
-print (t2)
+#t = time_fn(test_gaga_solver,25,4,100)
+#t2 = time_fn(test_gaga_solver,50,4,100)
+
+#print (t)
+#print (t2)
 
 
