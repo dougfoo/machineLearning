@@ -147,6 +147,53 @@ def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, 
             l += 1
     return guesses
 
+# solver using matrix solver on partial deriv already solved
+def grad_descent5(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, step_limit=0.00001, batchSize=None):
+    guesses = [0.01]*len(trainingMatrix[0])    # initial guess for all 
+    costChange = 1.0
+    if (batchSize == None):
+        batchSize = len(trainingMatrix)  #@todo can i set this in func param, or reduce to single expr
+    batchSize = min(len(trainingMatrix),batchSize)
+
+    # TODO do i really need these 2 here... pass them in?
+    ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
+    xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
+    
+    log.warn('init guesses %s'%(str(guesses)))
+    log.warn('init func: %s, training size: %d' %(str(hFunc),trainingMatrix.shape[0]))
+    log.debug('ts: %s / xs: %s',ts,xs)
+
+    costF = evalSumF2(cFunc,xs,trainingMatrix,yArr)  # cost fun evaluted for testData
+    cost = 0.0+costF.subs(zip(ts,guesses))  
+    log.warn('init cost: %f, costF %s',cost,str(costF)) # show first 80 char of cost evaluation
+
+    trainingMatrix = shuffle(trainingMatrix, random_state=0)
+
+    i=j=l=0
+    while (abs(costChange) > step_limit and l<loop_limit):  # outer loop batch chunk
+        i=j=k=0
+        k = j+batchSize if j+batchSize<len(trainingMatrix) else len(trainingMatrix)
+        dataBatch = trainingMatrix[j:k]
+        yBatch = yArr[j:k]
+        log.debug('outer - batch %d, j: %d, k: %d'%(len(dataBatch),j,k))
+
+        while (i < len(trainingMatrix)/batchSize):  # inner batch size loop, min 1x loop
+            for t,theta in enumerate(ts):
+                pd = -----tbd------
+                guesses[t] = guesses[t] - step * pd
+            previousCost = cost
+            cost = costF.subs(zip(ts,guesses))
+            costChange = previousCost-cost
+            log.warn('l=%d,bs=%d,costChange=%f,cost=%f, guesses=%s'%(l,batchSize, costChange,cost,gf(guesses)))
+
+            j = k
+            k = j+batchSize if j+batchSize<len(trainingMatrix) else len(trainingMatrix)
+            dataBatch = trainingMatrix[j:k]
+            yBatch = yArr[j:k]
+            i += 1
+            l += 1
+    return guesses
+
 # expnd to avg(sum(f evaluated for xs,testData,yarr)) 
 def evalSumF2(f,xs,trainingMatrix,yArr):  # @TODO change testData to matrix
     assert (len(xs) == len(trainingMatrix[0]))
