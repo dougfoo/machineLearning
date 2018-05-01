@@ -102,7 +102,7 @@ def test_grad_descent4_2():
     print (inspect.currentframe().f_code.co_name)
     trainingMatrix = np.array([[1,4],[1,10],[1,20]])
     yArr = [8,18,42]
-    guesses = [0.01*len(yArr)]
+    guesses = [0.01]*len(yArr)
 
     ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
     xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
@@ -135,7 +135,6 @@ def test_grad_descent4_3(bs=1):
     print (inspect.currentframe().f_code.co_name)
     trainingMatrix = np.array([[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8]])
     yArr = [14,16,18,20,21,22,22]
-    guesses = [0.01*len(yArr)]
 
     ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
     xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
@@ -145,15 +144,12 @@ def test_grad_descent4_3(bs=1):
     cFunc = (f - y)**2  # error squared
 
     costF = evalSumF2(cFunc,xs,trainingMatrix,yArr)  # cost fun evaluted for testData
-    cost = 0.0+costF.subs(zip(ts,guesses))  
     log.warn('costF %s'%(str(costF)))
-    log.warn('cost %s'%(str(cost)))
 
-    log.warn('init guesses %s',str(guesses))
     log.error('init func: %s, training size: %d' %(str(f),len(trainingMatrix)))
     log.warn('ts: %s / xs: %s',ts,xs)
 
-    gs = grad_descent4(f,costF,trainingMatrix,yArr,step=0.01,loop_limit=50, batchSize=bs)    
+    gs = grad_descent4(f,costF,trainingMatrix,yArr,step=0.005,loop_limit=50, batchSize=bs)    
     log.warn('scaled A: %f'%(gs[0]))
     log.warn('scaled B: %f'%(gs[1]))
 
@@ -165,7 +161,28 @@ def test_grad_descent4_3(bs=1):
     assert(round(gs[1],2) == 3.09)    
 
 
+def test_grad_descent5():
+    print (inspect.currentframe().f_code.co_name)
+    trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
+    yArr = [8,18,42]
+    guesses = [0.01]*len(trainingMatrix[0])
+
+    from sklearn.metrics import mean_squared_error
+    cFunc = mean_squared_error
+
+    cost = cFunc(yArr, trainingMatrix.dot(guesses))
+    log.warn('cost %f'%(cost))
+
+    gs = grad_descent5(cFunc,trainingMatrix,yArr,step=0.001,loop_limit=100)    
+    log.warn('final: %s'%gs)
+    X = np.asmatrix(trainingMatrix)
+    Y = yArr
+    log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
+
+
 # running real suite
+
+'''
 log.getLogger().setLevel(log.ERROR )
 test_evalSumF2()
 test_evalSumF2_1()
@@ -173,5 +190,35 @@ test_evalPartialDeriv2()
 test_grad_descent4_1()
 test_grad_descent4_2()
 test_grad_descent4_3()
+'''
+#log.getLogger().setLevel(log.WARN)
+#test_grad_descent4_2()
+#test_grad_descent5()     
 
+import numpy as np
+import random
+from sklearn.datasets.samples_generator import make_regression 
+import pylab
+from scipy import stats
+
+def gradient_descent_2(alpha, x, y, numIterations):
+    print 'start'
+    m = x.shape[0] # number of samples
+    theta = [0.01]*len(x[0]) 
+    x_transpose = x.transpose()
+    for iter in range(0, numIterations):
+        hypothesis = np.dot(x, theta)
+        loss = hypothesis - y
+        J = np.sum(loss ** 2) / (2 * m)  # cost
+        gradient = np.dot(x_transpose, loss) / m         
+        theta = theta - alpha * gradient  # update
+        print "iter %s | J: %.3f | theta %s grad %s" % (iter, J, theta, gradient)      
+    return theta
+
+trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
+yArr = [8,18,42]
+
+print 'grad_d'
+theta = gradient_descent_2(0.005, trainingMatrix, yArr, 1000)
+print (theta)
 
