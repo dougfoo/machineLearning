@@ -65,7 +65,6 @@ def testLRGaga2(kFeatures=50,bs=4,ts=10):
  
     m1,c1 = fe.countWords2(trainingMatrix, labels, fnames)
     log.warn('reduced matrix: %s'%str(m1))
-    input("Press Enter to continue...")
  
     ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
     xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array

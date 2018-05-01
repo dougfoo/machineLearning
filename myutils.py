@@ -196,7 +196,7 @@ def grad_descent5(cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.0000
     batchSize = min(len(xArr),batchSize)
     guesses = [0.01]*len(xArr[0])  # initial guess for all 
     costChange = 1.0
-    cost = 55
+    cost = 1.0  # dummy start
     xArr = shuffle(xArr, random_state=0) # @@@OMG the bug..... must shuffle y's together....
     yArr = shuffle(yArr, random_state=0) # @@@OMG the bug..... must shuffle y's together....
     
@@ -212,8 +212,13 @@ def grad_descent5(cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.0000
         while (i < len(xArr)/batchSize):  # inner batch size loop, min 1x loop
             previousCost = cost
             hyp = np.dot(xBatch, guesses)
-            error = hyp - yBatch
-            cost = np.sum(error ** 2) * (2.0/len(xBatch)) 
+            error = hyp - yBatch   # parametize ?   f = h(x) - y ... for linear regress. for logistic regress ...
+                                   # should be f = 0*x + ..... 
+                                   #  g = 1 / (1+mp.e**-f)   # wrap in sigmoid
+                                   #  cost = (0-y)*sp.log(g) - (1-y)*sp.log(1-g)
+#            cost = np.sum(error ** 2) * (1.0/len(xBatch)) 
+            cost = cFunc(yBatch, xBatch.dot(guesses))
+#            assert (round(cost,2) == round(cost2,2))
             gradient = np.dot(xBatch_T, error) * (2.0/len(xBatch)) 
             guesses = guesses - step * gradient
             log.debug ('updated g %s %s'%(guesses, type(guesses)))
@@ -228,3 +233,21 @@ def grad_descent5(cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.0000
             i += 1
             l += 1
     return guesses
+
+trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
+yArr = [8,18,42]
+guesses = [0.01]*len(trainingMatrix[0])
+
+from sklearn.metrics import mean_squared_error
+cFunc = mean_squared_error
+err = cFunc(yArr, trainingMatrix.dot(guesses))
+log.warn('init err/cost: %f'%err)
+
+gs = grad_descent5(cFunc,trainingMatrix,yArr,step=0.005,loop_limit=500)    
+log.warn('final: %s'%gs)
+X = np.asmatrix(trainingMatrix)
+Y = yArr
+log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
+
+assert(round(gs[0],2) == -1.20)
+assert(round(gs[1],2) == 2.12)    
