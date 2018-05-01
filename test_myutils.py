@@ -149,7 +149,7 @@ def test_grad_descent4_3(bs=1):
     log.error('init func: %s, training size: %d' %(str(f),len(trainingMatrix)))
     log.warn('ts: %s / xs: %s',ts,xs)
 
-    gs = grad_descent4(f,costF,trainingMatrix,yArr,step=0.005,loop_limit=50, batchSize=bs)    
+    gs = grad_descent4(f,costF,trainingMatrix,yArr,step=0.03,loop_limit=50, batchSize=bs)    
     log.warn('scaled A: %f'%(gs[0]))
     log.warn('scaled B: %f'%(gs[1]))
 
@@ -157,8 +157,8 @@ def test_grad_descent4_3(bs=1):
     Y = yArr
     log.warn ('target sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
 
-    assert(round(gs[0],2) == 2.22)
-    assert(round(gs[1],2) == 3.09)    
+    assert(round(gs[0],2) == 4.94)
+    assert(round(gs[1],2) == 2.61)    
 
 
 def test_grad_descent5():
@@ -170,18 +170,34 @@ def test_grad_descent5():
     from sklearn.metrics import mean_squared_error
     cFunc = mean_squared_error
 
-    cost = cFunc(yArr, trainingMatrix.dot(guesses))
-    log.warn('cost %f'%(cost))
-
     gs = grad_descent5(cFunc,trainingMatrix,yArr,step=0.001,loop_limit=100)    
     log.warn('final: %s'%gs)
     X = np.asmatrix(trainingMatrix)
     Y = yArr
     log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
 
+    assert(round(gs[0],2) == -1.58)
+    assert(round(gs[1],2) == 2.14)    
+
+def test_grad_refer_solver():
+    print (inspect.currentframe().f_code.co_name)
+    trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
+    yArr = [8,18,42]
+
+    gs = gradient_descent_simple(0.005, trainingMatrix, yArr, 1000)
+    log.warn('final: %s'%gs)
+    X = np.asmatrix(trainingMatrix)
+    Y = yArr
+    log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
+
+    assert(round(gs[0],2) == -1.58)
+    assert(round(gs[1],2) == 2.14)    
+
+
+log.getLogger().setLevel(log.WARN )
+test_grad_refer_solver()
 
 # running real suite
-
 '''
 log.getLogger().setLevel(log.ERROR )
 test_evalSumF2()
@@ -190,31 +206,6 @@ test_evalPartialDeriv2()
 test_grad_descent4_1()
 test_grad_descent4_2()
 test_grad_descent4_3()
+test_grad_descent5()     
+test_grad_refer_solver()
 '''
-#log.getLogger().setLevel(log.WARN)
-#test_grad_descent4_2()
-#test_grad_descent5()     
-
-import numpy as np
-
-def gradient_descent_2(alpha, x, y, numIterations):
-    print 'start'
-    m = x.shape[0] # number of samples
-    theta = [0.01]*len(x[0]) # init guesses
-    x_transpose = x.transpose()
-    for iter in range(0, numIterations):
-        hypothesis = np.dot(x, theta)
-        error = hypothesis - y   # error/cost
-        J = np.sum(error ** 2) * (2.0 / m)  # sum of errors (total cost)
-        gradient = np.dot(x_transpose, error) * (2.0/m)         
-        theta = theta - alpha * gradient  # update
-        print "iter %s | J: %.3f | theta %s grad %s" % (iter, J, theta, gradient)      
-    return theta
-
-trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
-yArr = [8,18,42]
-
-print 'grad_d'
-theta = gradient_descent_2(0.005, trainingMatrix, yArr, 1000)
-print (theta)
-
