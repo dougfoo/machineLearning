@@ -160,25 +160,6 @@ def test_grad_descent4_3(bs=1):
     assert(round(gs[0],2) == 4.94)
     assert(round(gs[1],2) == 2.61)    
 
-
-def test_grad_descent5():
-    print (inspect.currentframe().f_code.co_name)
-    trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
-    yArr = [8,18,42]
-    guesses = [0.01]*len(trainingMatrix[0])
-
-    from sklearn.metrics import mean_squared_error
-    cFunc = mean_squared_error
-
-    gs = grad_descent5(cFunc,trainingMatrix,yArr,step=0.001,loop_limit=100)    
-    log.warn('final: %s'%gs)
-    X = np.asmatrix(trainingMatrix)
-    Y = yArr
-    log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
-
-    assert(round(gs[0],2) == -1.58)
-    assert(round(gs[1],2) == 2.14)    
-
 def test_grad_refer_solver():
     print (inspect.currentframe().f_code.co_name)
     trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
@@ -193,12 +174,42 @@ def test_grad_refer_solver():
     assert(round(gs[0],2) == -1.58)
     assert(round(gs[1],2) == 2.14)    
 
+def test_grad_descent5():
+    print (inspect.currentframe().f_code.co_name)
+    trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
+    yArr = [8,18,42]
+    guesses = [0.01]*len(trainingMatrix[0])
 
-log.getLogger().setLevel(log.WARN )
-test_grad_refer_solver()
+    from sklearn.metrics import mean_squared_error
+    cFunc = mean_squared_error
 
-# running real suite
-'''
+    gs = grad_descent5(cFunc,trainingMatrix,yArr,step=0.005,loop_limit=500)    
+    log.warn('final: %s'%gs)
+    X = np.asmatrix(trainingMatrix)
+    Y = yArr
+    log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
+
+    assert(round(gs[0],2) == -1.20)
+    assert(round(gs[1],2) == 2.12)    
+
+def test_grad_descent5a():
+    print (inspect.currentframe().f_code.co_name)
+    trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
+    yArr = [8,18,42]
+    guesses = [0.01]*len(trainingMatrix[0])
+
+    from sklearn.metrics import mean_squared_error
+    cFunc = mean_squared_error
+
+    gs = grad_descent5(cFunc,trainingMatrix,yArr,step=0.005,loop_limit=500)    
+    log.warn('final: %s'%gs)
+    X = np.asmatrix(trainingMatrix)
+    Y = yArr
+    log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
+
+    assert(round(gs[0],2) == -1.20)
+    assert(round(gs[1],2) == 2.12)    
+
 log.getLogger().setLevel(log.ERROR )
 test_evalSumF2()
 test_evalSumF2_1()
@@ -206,6 +217,7 @@ test_evalPartialDeriv2()
 test_grad_descent4_1()
 test_grad_descent4_2()
 test_grad_descent4_3()
-test_grad_descent5()     
 test_grad_refer_solver()
-'''
+test_grad_descent5()     
+test_grad_descent5a()
+

@@ -122,7 +122,8 @@ def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, 
     cost = 0.0+costF.subs(zip(ts,guesses))  
     log.warn('init cost: %f, costF %s',cost,str(costF)) # show first 80 char of cost evaluation
 
-    trainingMatrix = shuffle(trainingMatrix, random_state=0)   # @BUG didn't shuffle y's did I ... ?
+    trainingMatrix = shuffle(trainingMatrix, random_state=0)   
+    yArr = shuffle(yArr, random_state=0)   
 
     i=j=l=0
     while (abs(costChange) > step_limit and l<loop_limit):  # outer loop batch chunk
@@ -196,7 +197,8 @@ def grad_descent5(cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.0000
     guesses = [0.01]*len(xArr[0])  # initial guess for all 
     costChange = 1.0
     cost = 55
-#    xArr = shuffle(xArr, random_state=0)  @@@OMG the bug..... must shuffle y's together....
+    xArr = shuffle(xArr, random_state=0) # @@@OMG the bug..... must shuffle y's together....
+    yArr = shuffle(yArr, random_state=0) # @@@OMG the bug..... must shuffle y's together....
     
     i=j=l=0
     while (abs(costChange) > step_limit and l<loop_limit):  # outer loop batch chunk
@@ -208,9 +210,9 @@ def grad_descent5(cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.0000
         log.debug('outer - batch %d, j: %d, k: %d'%(len(xBatch),j,k))
 
         while (i < len(xArr)/batchSize):  # inner batch size loop, min 1x loop
+            previousCost = cost
             hyp = np.dot(xBatch, guesses)
             error = hyp - yBatch
-            previousCost = cost
             cost = np.sum(error ** 2) * (2.0/len(xBatch)) 
             gradient = np.dot(xBatch_T, error) * (2.0/len(xBatch)) 
             guesses = guesses - step * gradient
@@ -226,13 +228,3 @@ def grad_descent5(cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.0000
             i += 1
             l += 1
     return guesses
-
-trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
-yArr = [8,18,42]
-from sklearn.metrics import mean_squared_error
-cFunc = mean_squared_error
-gs = grad_descent5(cFunc,trainingMatrix,yArr,step=0.005,loop_limit=1000)    
-log.warn('final: %s'%gs)
-X = np.asmatrix(trainingMatrix)
-Y = yArr
-log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
