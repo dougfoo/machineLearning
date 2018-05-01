@@ -196,21 +196,17 @@ test_grad_descent4_3()
 #test_grad_descent5()     
 
 import numpy as np
-import random
-from sklearn.datasets.samples_generator import make_regression 
-import pylab
-from scipy import stats
 
 def gradient_descent_2(alpha, x, y, numIterations):
     print 'start'
     m = x.shape[0] # number of samples
-    theta = [0.01]*len(x[0]) 
+    theta = [0.01]*len(x[0]) # init guesses
     x_transpose = x.transpose()
     for iter in range(0, numIterations):
         hypothesis = np.dot(x, theta)
-        loss = hypothesis - y
-        J = np.sum(loss ** 2) / (2 * m)  # cost
-        gradient = np.dot(x_transpose, loss) / m         
+        error = hypothesis - y   # error/cost
+        J = np.sum(error ** 2) * (2.0 / m)  # sum of errors (total cost)
+        gradient = np.dot(x_transpose, error) * (2.0/m)         
         theta = theta - alpha * gradient  # update
         print "iter %s | J: %.3f | theta %s grad %s" % (iter, J, theta, gradient)      
     return theta
