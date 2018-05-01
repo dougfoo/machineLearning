@@ -26,7 +26,7 @@ def test_lr_gaga_solver_1():
     f = (sp.Matrix(ts).T * sp.Matrix(xs) ) [0]
     g = 1 / (1+mp.e**-f)   # wrap in sigmoid
     y = sp.symbols('y')
-    cFunc = (-y)*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
+    cFunc = (0-y)*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
 
     costF = evalSumF2(cFunc,xs,trainingMatrix,yArr)  # cost fun evaluted for testData
 
@@ -48,7 +48,7 @@ def test_lr_gaga_solver_2():
     f = (sp.Matrix(ts).T * sp.Matrix(xs) ) [0]
     g = 1 / (1+mp.e**-f)   # wrap in sigmoid
     y = sp.symbols('y')
-    cFunc = (-y)*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
+    cFunc = (0-y)*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
 
     costF = evalSumF2(cFunc,xs,trainingMatrix,yArr)  # cost fun evaluted for testData
 

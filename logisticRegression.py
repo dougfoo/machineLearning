@@ -58,37 +58,33 @@ def testLRGaga2(kFeatures=50,bs=4,ts=10):
     df = pandas.DataFrame(trainingMatrix, columns=labels)
     df = df[pickwords]
     print(df.shape)
+    print(df.describe())
+    print(df)
     trainingMatrix = df.as_matrix()
     labels = pickwords
  
     m1,c1 = fe.countWords2(trainingMatrix, labels, fnames)
     log.warn('reduced matrix: %s'%str(m1))
-
+    input("Press Enter to continue...")
+ 
     ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
     xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
     xt = sp.Matrix(ts).T * sp.Matrix(xs)
     f = xt[0]
     g = 1 / (1+mp.e**-f)   # wrap in sigmoid
     y = sp.symbols('y')
-    cFunc = -y*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
+    cFunc = (0-y)*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
 
     costF = evalSumF2(cFunc,xs,trainingMatrix,yArr)  # cost fun evaluted for testData
 
     log.error('init func: %s, training size: %d' %(str(f),len(trainingMatrix)))
     log.warn('ts: %s / xs: %s',ts,xs)
 
-    X = np.asmatrix(trainingMatrix)
-    sol = (X.T.dot(X)).I.dot(X.T).dot(yArr)
-    sol = np.asarray(sol)[0]
-    log.warn ('target sol (X.T * X)^-1 * X.T*Y:     %s'% str(fe.gf(sol)))
-
     gs = grad_descent4(f,costF,trainingMatrix,yArr,step=0.001,step_limit=0.00001,loop_limit=500, batchSize=bs)    
     log.warn('scaled A: %f'%(gs[0]))
     log.warn('scaled B: %f'%(gs[1]))
 
-    log.warn ('target sol (X.T * X)^-1 * X.T*Y:     %s'% str(fe.gf(sol)))
+log.basicConfig(level=log.WARN)
+log.info('start %s'%(log.getLogger().level))
 
-#log.basicConfig(level=log.WARN)
-#log.info('start %s'%(log.getLogger().level))
-
-#testLRGaga()
+testLRGaga2(kFeatures=10,bs=2,ts=10)
