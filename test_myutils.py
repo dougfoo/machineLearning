@@ -2,6 +2,7 @@
 from myutils import *
 import inspect
 import numpy as np
+from sklearn.metrics import mean_squared_error
 
 
 def test_dummy():
@@ -178,12 +179,8 @@ def test_grad_descent5():
     print (inspect.currentframe().f_code.co_name)
     trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
     yArr = [8,18,42]
-    guesses = [0.01]*len(trainingMatrix[0])
 
-    from sklearn.metrics import mean_squared_error
-    cFunc = mean_squared_error
-
-    gs = grad_descent5(cFunc,trainingMatrix,yArr,step=0.005,loop_limit=500)    
+    gs = grad_descent5(lambda y,x: x-y,mean_squared_error,trainingMatrix,yArr,step=0.005,loop_limit=500)    
     log.warn('final: %s'%gs)
     X = np.asmatrix(trainingMatrix)
     Y = yArr
@@ -196,12 +193,8 @@ def test_grad_descent5a():
     print (inspect.currentframe().f_code.co_name)
     trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
     yArr = [8,18,42]
-    guesses = [0.01]*len(trainingMatrix[0])
 
-    from sklearn.metrics import mean_squared_error
-    cFunc = mean_squared_error
-
-    gs = grad_descent5(cFunc,trainingMatrix,yArr,step=0.005,loop_limit=500)    
+    gs = grad_descent5(lambda y,x: x-y,mean_squared_error,trainingMatrix,yArr,step=0.005,loop_limit=500)    
     log.warn('final: %s'%gs)
     X = np.asmatrix(trainingMatrix)
     Y = yArr

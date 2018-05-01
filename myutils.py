@@ -1,7 +1,7 @@
 import time, itertools, os,requests, pandas, io
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error,log_loss
 import logging as log
 import sympy as sp
 import numpy as np
@@ -101,8 +101,7 @@ def plotLine(ax,A,B,min=0,max=5000):
     plt.pause(0.01)
     return ax
 
-
-# generic solver takes in hypothesis function, cost func, training matrix, theta array, yarray
+# generic solver takes in xEvalothesis function, cost func, training matrix, theta array, yarray
 def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, step_limit=0.00001, batchSize=None):
     guesses = [0.01]*len(trainingMatrix[0])  # @TODO is this right or len(yArr)
     costChange = 1.0
@@ -150,7 +149,6 @@ def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, 
             l += 1
     return guesses
 
-
 # expnd to avg(sum(f evaluated for xs,testData,yarr)) 
 def evalSumF2(f,xs,trainingMatrix,yArr):  # @TODO change testData to matrix
     assert (len(xs) == len(trainingMatrix[0]))
@@ -189,8 +187,19 @@ def gradient_descent_simple(step, xMatrix, yArr, step_limit):
         log.warn("iter %s | J: %.3f | theta %s grad %s" % (iter, J, theta, gradient))
     return theta
 
-# generic solver, cFunc(y,h), xArr (np.array), yArr (np.array)
-def grad_descent5(cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.00001, batchSize=None):
+# i'm sure this isn't necessary... i will delete it oneday
+def sigmoidError(y,x):
+    ret=[]
+    for i,x_ in enumerate(x):
+        p = 1.0 / (1+np.e**-x_)
+        cost = -np.log(p)
+        if (y[i] == 0):
+            cost = -np.log(1-p)
+        ret.append(cost)
+    return ret
+
+# generic solver, evalFunc(y,x), sum cFunc(y,x), xArr (np.array), yArr (np.array)
+def grad_descent5(eFunc, cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.00001, batchSize=None):
     if (batchSize == None):
         batchSize = len(xArr)  #@todo can i set this in func param, or reduce to single expr
     batchSize = min(len(xArr),batchSize)
@@ -211,14 +220,10 @@ def grad_descent5(cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.0000
 
         while (i < len(xArr)/batchSize):  # inner batch size loop, min 1x loop
             previousCost = cost
-            hyp = np.dot(xBatch, guesses)
-            error = hyp - yBatch   # parametize ?   f = h(x) - y ... for linear regress. for logistic regress ...
-                                   # should be f = 0*x + ..... 
-                                   #  g = 1 / (1+mp.e**-f)   # wrap in sigmoid
-                                   #  cost = (0-y)*sp.log(g) - (1-y)*sp.log(1-g)
-#            cost = np.sum(error ** 2) * (1.0/len(xBatch)) 
-            cost = cFunc(yBatch, xBatch.dot(guesses))
-#            assert (round(cost,2) == round(cost2,2))
+            xEval = np.dot(xBatch, guesses)
+            error = eFunc(yBatch,xEval)  # array of errors
+            sigX = [1.0 / (1+np.e**-x) for x in xEval]  # convert to sigmoid 0-1
+            cost = cFunc(yBatch,sigX)   # total of errors thru log/-log function
             gradient = np.dot(xBatch_T, error) * (2.0/len(xBatch)) 
             guesses = guesses - step * gradient
             log.debug ('updated g %s %s'%(guesses, type(guesses)))
@@ -234,20 +239,20 @@ def grad_descent5(cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.0000
             l += 1
     return guesses
 
-trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
-yArr = [8,18,42]
-guesses = [0.01]*len(trainingMatrix[0])
+## test section
 
-from sklearn.metrics import mean_squared_error
-cFunc = mean_squared_error
-err = cFunc(yArr, trainingMatrix.dot(guesses))
+trainingMatrix = np.array([[0,10],[1,12],[10,5],[12,3]])  # 2 features
+yArr = [1,1,0,0]
+guesses = [0.01]*len(trainingMatrix[0])
+xEval = trainingMatrix.dot(guesses)
+err = log_loss(yArr, xEval)
 log.warn('init err/cost: %f'%err)
 
-gs = grad_descent5(cFunc,trainingMatrix,yArr,step=0.005,loop_limit=500)    
+gs = grad_descent5(sigmoidError,log_loss,trainingMatrix,yArr,step=0.01,loop_limit=500)    
 log.warn('final: %s'%gs)
 X = np.asmatrix(trainingMatrix)
 Y = yArr
 log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
 
-assert(round(gs[0],2) == -1.20)
-assert(round(gs[1],2) == 2.12)    
+#assert(round(gs[0],2) == 0-1.2)
+#assert(round(gs[1],2) == 2.12)    
