@@ -61,13 +61,25 @@ def test_lr_gaga_solver_2():
     assert (round(gs[2],2) == -0.12)
     assert (round(gs[3],2) == -0.06)
 
-#    assert(round(gs[0]) == 11)
-#    assert(round(gs[1],1) == 1.5)    
+def test_lr_gaga_solver_3():
+    print (inspect.currentframe().f_code.co_name)
+    yArr = np.array([1,1,0,0,0])
+    trainingMatrix = np.array([[12,5,1,2,1],[10,5,3,1,2],[0,1,8,2,1],[2,1,7,7,9]])  #dummy data 1's, word1, word2 -- first row gaga, 2nd non
 
-log.getLogger().setLevel(log.ERROR)
+    gs = grad_descent5(lambda y,x: sigmoid(x)-y,sigmoidCost,trainingMatrix,yArr,step=0.01,step_limit=0.00001,loop_limit=100,batchSize=3)    
+    gs1 = grad_descent5(lambda y,x: sigmoid(x)-y,log_loss,trainingMatrix,yArr,step=0.01,step_limit=0.00001,loop_limit=100,batchSize=3)    
+    log.warn('final: %s'%gs)
+    log.warn('final: %s'%gs1)
+    assert (round(gs[0],2) == round(gs1[0],2))
+    assert (round(gs[1],2) == round(gs1[1],2))
+    assert (round(gs[2],2) == round(gs1[2],2))
 
-test_lr_gaga_solver_1()
-test_lr_gaga_solver_2()
+if __name__ == "__main__":
+    log.getLogger().setLevel(log.WARN)
+
+    # test_lr_gaga_solver_1()
+    # test_lr_gaga_solver_2()
+    test_lr_gaga_solver_3()
 
 
 

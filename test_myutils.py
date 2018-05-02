@@ -195,16 +195,19 @@ def test_grad_descent5a():
     yArr = [8,18,42]
 
     gs = grad_descent5(lambda y,x: x-y,mean_absolute_error,trainingMatrix,yArr,step=0.005,loop_limit=500)    
+    gs1 = grad_descent5(lambda y,x: x-y,mean_squared_error,trainingMatrix,yArr,step=0.005,loop_limit=500)    
     log.warn('final: %s'%gs)
     X = np.asmatrix(trainingMatrix)
     Y = yArr
     log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
 
+    assert(round(gs[0],2) == round(gs1[0],2))
+    assert(round(gs[1],2) == round(gs1[1],2))
     assert(round(gs[0],2) == -1.20)
     assert(round(gs[1],2) == 2.12)    
 
 if __name__ == "__main__":
-    log.getLogger().setLevel(log.WARN)
+    log.getLogger().setLevel(log.ERROR)
     test_evalSumF2()
     test_evalSumF2_1()
     test_evalPartialDeriv2()

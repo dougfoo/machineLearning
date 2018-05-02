@@ -188,21 +188,6 @@ def gradient_descent_simple(step, xMatrix, yArr, step_limit):
     return theta
 
 
-#reference impl for mean_square cost
-def gradient_descent_simple_log(step, xMatrix, yArr, step_limit):
-    m = len(xMatrix) # number of samples
-    theta = [0.01]*len(xMatrix[0]) # init guesses
-    x_transpose = xMatrix.transpose()
-    for iter in range(0, step_limit):
-        hypothesis = np.dot(xMatrix, theta)
-#        error = hypothesis - yArr   # error/cost
-        error = sigmoidCost(yArr,hypothesis)
-        J = np.sum(error) * (2.0 / m)  # sum of errors (total cost)
-        gradient = np.dot(x_transpose, error) * (2.0/m)         
-        theta = theta - step * gradient  # update
-        log.warn("iter %s | J: %.3f | theta %s grad %s" % (iter, J, theta, gradient))
-    return theta
-
 # generic solver, errorFunc(y,x), costFunc(y,x), xArr (np.array), yArr (np.array)
 def grad_descent5(eFunc, cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.00001, batchSize=None):
     if (batchSize == None):
@@ -211,7 +196,7 @@ def grad_descent5(eFunc, cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit
     guesses = [0.01]*len(xArr[0])  # initial guess for all 
     costChange = 1.0
     costSum = 1.0  # dummy start
-    xArr = shuffle(xArr, random_state=0) 
+    xArr = shuffle(xArr, random_state=0)  # must shuffle both xArr,yArr together w/ same seed !!
     yArr = shuffle(yArr, random_state=0) 
     
     i=j=l=0
@@ -225,16 +210,11 @@ def grad_descent5(eFunc, cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit
         while (i < len(xArr)/batchSize):  # inner batch size loop, min 1x loop
             previousCost = costSum
             xEval = np.dot(xBatch, guesses)  # array of X*0 "scores"
-            error = eFunc(yBatch, xEval)
-#            cost_a = cFunc(yBatch,xEval)  # array of costs X*0-Y (using eFunc cost-eval-func)
-#            costSum = 2.0/len(xBatch) * sum(cost_a)   # 2.0/m * sum(costs) - equiv to sklearn.metrics.log_loss(y,x)
-            costSum = cFunc(yBatch,error+yBatch)  # xEval ~= error+yBatch [error = sig(x)-y or x-y which works]
-            gradient = np.dot(xBatch.T, error)  # X.T*(X*0-Y)
-            guesses = guesses - step * gradient * 2.0/len(xBatch)  #ng: 0:=0 - a/m * X.T*(X*0 - Y)
-            log.debug ('updated g %s %s'%(guesses, type(guesses)))
-            log.debug ('prevCost %s'%previousCost)
+            error = eFunc(yBatch, xEval)     # errorFunc could be x-y or sig(x)-y   
+            costSum = cFunc(yBatch,error+yBatch)  # xEval derived ~= error+yBatch [error = sig(x)-y or x-y which works]
+            guesses = guesses - step * np.dot(xBatch.T, error) * 2.0/len(xBatch)  #ng: 0:=0 - a/m * X.T*(g(X*0) - Y)
             costChange = previousCost-costSum
-            log.warn('l=%d,bs=%d,costChange=%f,cost=%f, guesses=%s'%(l,batchSize, costChange,costSum,gf(guesses)))
+            log.warn('l=%d,i=%d,bs=%d,costChange=%f,cost=%f, guesses=%s'%(l,i,batchSize, costChange,costSum,gf(guesses)))
 
             j = k
             k = j+batchSize if j+batchSize<len(xArr) else len(xArr)
@@ -244,13 +224,14 @@ def grad_descent5(eFunc, cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit
             l += 1
     return guesses
 
+# replaced by log_loss scikit function, this one is easier because it doesn't need both 0's and 1's...
 def sigmoidCost(y,x):
     ret=[]
     for i,x_ in enumerate(x):
         p = sigmoid(x_) 
         cost = -y[i]*np.log(p) - (1-y[i])*np.log(1.0-p)
         ret.append(cost)
-    return ret
+    return sum(ret)/len(y)
 
 def sigmoid(x):
     return 1.0 / (1 + np.exp(-x))
