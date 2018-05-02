@@ -143,30 +143,30 @@ def plotGradientRun():
 ##################
 ## runtime main ##
 ##################
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('-bs', help='batch size', type=int)
+    parser.add_argument('-ts', help='training size', type=int)
+    parser.add_argument('-t', help='title', type=str)
+    args = vars(parser.parse_args())
 
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('-bs', help='batch size', type=int)
-parser.add_argument('-ts', help='training size', type=int)
-parser.add_argument('-t', help='title', type=str)
-args = vars(parser.parse_args())
+    _bs = args['bs']
+    _ts = args['ts']
+    _t = args['t']
 
-_bs = args['bs']
-_ts = args['ts']
-_t = args['t']
+    #plotGradientRun()
+    t1 = testGD(plt=True, gd=grad_descent2, bs=_bs, ts=_ts, t=_t)   # equivalent of stocastic descent
+    #t2 = testGD(plt=True, gd=grad_descent2, bs=5, ts=52)  # equavalent of mini-batch descent
+    #t3 = testGD(plt=True, gd=grad_descent2, ts=52)         # standard batch descent
 
-#plotGradientRun()
-t1 = testGD(plt=True, gd=grad_descent2, bs=_bs, ts=_ts, t=_t)   # equivalent of stocastic descent
-#t2 = testGD(plt=True, gd=grad_descent2, bs=5, ts=52)  # equavalent of mini-batch descent
-#t3 = testGD(plt=True, gd=grad_descent2, ts=52)         # standard batch descent
+    #t4 = testGD(plt=True, gd=grad_descent2, bs=1, ts=200)   # equivalent of stocastic descent
+    #t5 = testGD(plt=True, gd=grad_descent2, bs=20, ts=200)  # equavalent of mini-batch descent
+    #t6 = testGD(plt=True, gd=grad_descent2, ts=200)         # standard batch descent
 
-#t4 = testGD(plt=True, gd=grad_descent2, bs=1, ts=200)   # equivalent of stocastic descent
-#t5 = testGD(plt=True, gd=grad_descent2, bs=20, ts=200)  # equavalent of mini-batch descent
-#t6 = testGD(plt=True, gd=grad_descent2, ts=200)         # standard batch descent
+    print('timing & results - stocastic:', t1)
+    #print('timing & results - mini batch:', t2)
+    #print('timing & results - batch:', t3)
 
-print('timing & results - stocastic:', t1)
-#print('timing & results - mini batch:', t2)
-#print('timing & results - batch:', t3)
-
-#print('timing & results - stocastic:', t4)
-#print('timing & results - mini batch:', t5)
-#print('timing & results - batch:', t6)
+    #print('timing & results - stocastic:', t4)
+    #print('timing & results - mini batch:', t5)
+    #print('timing & results - batch:', t6)

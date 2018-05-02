@@ -173,7 +173,7 @@ def evalPartialDeriv2(f,theta,ts,xs,trainingMatrix,guesses,yArr):
     log.info ('    --> pdcost %f ;  %s  ;  %s: '%(pdcost,str(f),str(theta)))
     return pdcost
 
-#reference impl
+#reference impl for mean_square cost
 def gradient_descent_simple(step, xMatrix, yArr, step_limit):
     m = len(xMatrix) # number of samples
     theta = [0.01]*len(xMatrix[0]) # init guesses
@@ -187,49 +187,54 @@ def gradient_descent_simple(step, xMatrix, yArr, step_limit):
         log.warn("iter %s | J: %.3f | theta %s grad %s" % (iter, J, theta, gradient))
     return theta
 
-# i'm sure this isn't necessary... i will delete it oneday
-def sigmoidError(y,x):
-    ret=[]
-    for i,x_ in enumerate(x):
-        p = 1.0 / (1+np.e**-x_)
-        cost = -np.log(p)
-        if (y[i] == 0):
-            cost = -np.log(1-p)
-        ret.append(cost)
-    return ret
 
-# generic solver, evalFunc(y,x), sum cFunc(y,x), xArr (np.array), yArr (np.array)
+#reference impl for mean_square cost
+def gradient_descent_simple_log(step, xMatrix, yArr, step_limit):
+    m = len(xMatrix) # number of samples
+    theta = [0.01]*len(xMatrix[0]) # init guesses
+    x_transpose = xMatrix.transpose()
+    for iter in range(0, step_limit):
+        hypothesis = np.dot(xMatrix, theta)
+#        error = hypothesis - yArr   # error/cost
+        error = sigmoidCost(yArr,hypothesis)
+        J = np.sum(error) * (2.0 / m)  # sum of errors (total cost)
+        gradient = np.dot(x_transpose, error) * (2.0/m)         
+        theta = theta - step * gradient  # update
+        log.warn("iter %s | J: %.3f | theta %s grad %s" % (iter, J, theta, gradient))
+    return theta
+
+# generic solver, errorFunc(y,x), costFunc(y,x), xArr (np.array), yArr (np.array)
 def grad_descent5(eFunc, cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.00001, batchSize=None):
     if (batchSize == None):
         batchSize = len(xArr)  #@todo can i set this in func param, or reduce to single expr
     batchSize = min(len(xArr),batchSize)
     guesses = [0.01]*len(xArr[0])  # initial guess for all 
     costChange = 1.0
-    cost = 1.0  # dummy start
-    xArr = shuffle(xArr, random_state=0) # @@@OMG the bug..... must shuffle y's together....
-    yArr = shuffle(yArr, random_state=0) # @@@OMG the bug..... must shuffle y's together....
+    costSum = 1.0  # dummy start
+    xArr = shuffle(xArr, random_state=0) 
+    yArr = shuffle(yArr, random_state=0) 
     
     i=j=l=0
     while (abs(costChange) > step_limit and l<loop_limit):  # outer loop batch chunk
         i=j=k=0
         k = j+batchSize if j+batchSize<len(xArr) else len(xArr)
         xBatch = xArr[j:k]
-        xBatch_T = xBatch.T
         yBatch = yArr[j:k]
         log.debug('outer - batch %d, j: %d, k: %d'%(len(xBatch),j,k))
 
         while (i < len(xArr)/batchSize):  # inner batch size loop, min 1x loop
-            previousCost = cost
-            xEval = np.dot(xBatch, guesses)
-            error = eFunc(yBatch,xEval)  # array of errors
-            sigX = [1.0 / (1+np.e**-x) for x in xEval]  # convert to sigmoid 0-1
-            cost = cFunc(yBatch,sigX)   # total of errors thru log/-log function
-            gradient = np.dot(xBatch_T, error) * (2.0/len(xBatch)) 
-            guesses = guesses - step * gradient
+            previousCost = costSum
+            xEval = np.dot(xBatch, guesses)  # array of X*0 "scores"
+            error = eFunc(yBatch, xEval)
+#            cost_a = cFunc(yBatch,xEval)  # array of costs X*0-Y (using eFunc cost-eval-func)
+#            costSum = 2.0/len(xBatch) * sum(cost_a)   # 2.0/m * sum(costs) - equiv to sklearn.metrics.log_loss(y,x)
+            costSum = cFunc(yBatch,error+yBatch)  # xEval ~= error+yBatch [error = sig(x)-y or x-y which works]
+            gradient = np.dot(xBatch.T, error)  # X.T*(X*0-Y)
+            guesses = guesses - step * gradient * 2.0/len(xBatch)  #ng: 0:=0 - a/m * X.T*(X*0 - Y)
             log.debug ('updated g %s %s'%(guesses, type(guesses)))
             log.debug ('prevCost %s'%previousCost)
-            costChange = previousCost-cost
-            log.warn('l=%d,bs=%d,costChange=%f,cost=%f, guesses=%s'%(l,batchSize, costChange,cost,gf(guesses)))
+            costChange = previousCost-costSum
+            log.warn('l=%d,bs=%d,costChange=%f,cost=%f, guesses=%s'%(l,batchSize, costChange,costSum,gf(guesses)))
 
             j = k
             k = j+batchSize if j+batchSize<len(xArr) else len(xArr)
@@ -239,20 +244,39 @@ def grad_descent5(eFunc, cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit
             l += 1
     return guesses
 
+def sigmoidCost(y,x):
+    ret=[]
+    for i,x_ in enumerate(x):
+        p = sigmoid(x_) 
+        cost = -y[i]*np.log(p) - (1-y[i])*np.log(1.0-p)
+        ret.append(cost)
+    return ret
+
+def sigmoid(x):
+    return 1.0 / (1 + np.exp(-x))
+
 ## test section
+if __name__ == "__main__":
+    trainingMatrix = np.array([[0,10],[1,12],[10,5],[12,3]])  # 2 features
+    yArr = [1,1,0,0]
+    guesses = [0.01]*len(trainingMatrix[0])
+    xEval = trainingMatrix.dot(guesses)
+    err = log_loss(yArr, xEval)
+    log.warn('init err/cost: %f'%err)
 
-trainingMatrix = np.array([[0,10],[1,12],[10,5],[12,3]])  # 2 features
-yArr = [1,1,0,0]
-guesses = [0.01]*len(trainingMatrix[0])
-xEval = trainingMatrix.dot(guesses)
-err = log_loss(yArr, xEval)
-log.warn('init err/cost: %f'%err)
+    gs = grad_descent5(lambda y,x: sigmoid(x)-y,log_loss,trainingMatrix,yArr,step=0.005,loop_limit=100)    
+    log.warn('final: %s'%gs)
 
-gs = grad_descent5(sigmoidError,log_loss,trainingMatrix,yArr,step=0.01,loop_limit=500)    
-log.warn('final: %s'%gs)
-X = np.asmatrix(trainingMatrix)
-Y = yArr
-log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
+    # gs = gradient_descent_simple_log(0.005, trainingMatrix, yArr, 10)
+    # log.warn('final: %s'%gs)
 
-#assert(round(gs[0],2) == 0-1.2)
-#assert(round(gs[1],2) == 2.12)    
+    X = np.asmatrix(trainingMatrix)
+    Y = yArr
+    log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
+
+    from sklearn.linear_model import LogisticRegression
+    log_reg = LogisticRegression()
+    log_reg.fit(X,Y)
+    print ('scikit solution:',log_reg.coef_)
+    print ('scikit intercept?',log_reg.intercept_)
+

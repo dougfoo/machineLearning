@@ -100,10 +100,11 @@ def testFeatureAnalysis():
 
     return m
 
-#log.basicConfig(level=log.WARN)
-#log.warn('start %s'%(log.getLogger().level))
-#numpy.set_printoptions(linewidth=163)
-#numpy.set_printoptions(threshold='nan')
-#mF = testFeatureAnalysis()
-#sF = testScikitFeatureCleanup()
+if __name__ == "__main__":
+    log.basicConfig(level=log.WARN)
+    log.warn('start %s'%(log.getLogger().level))
+    numpy.set_printoptions(linewidth=163)
+    numpy.set_printoptions(threshold='nan')
+    mF = testFeatureAnalysis()
+    sF = testScikitFeatureCleanup()
 

@@ -2,7 +2,7 @@
 from myutils import *
 import inspect
 import numpy as np
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import *
 
 
 def test_dummy():
@@ -194,7 +194,7 @@ def test_grad_descent5a():
     trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
     yArr = [8,18,42]
 
-    gs = grad_descent5(lambda y,x: x-y,mean_squared_error,trainingMatrix,yArr,step=0.005,loop_limit=500)    
+    gs = grad_descent5(lambda y,x: x-y,mean_absolute_error,trainingMatrix,yArr,step=0.005,loop_limit=500)    
     log.warn('final: %s'%gs)
     X = np.asmatrix(trainingMatrix)
     Y = yArr
@@ -203,14 +203,15 @@ def test_grad_descent5a():
     assert(round(gs[0],2) == -1.20)
     assert(round(gs[1],2) == 2.12)    
 
-log.getLogger().setLevel(log.ERROR )
-test_evalSumF2()
-test_evalSumF2_1()
-test_evalPartialDeriv2()
-test_grad_descent4_1()
-test_grad_descent4_2()
-test_grad_descent4_3()
-test_grad_refer_solver()
-test_grad_descent5()     
-test_grad_descent5a()
+if __name__ == "__main__":
+    log.getLogger().setLevel(log.WARN)
+    test_evalSumF2()
+    test_evalSumF2_1()
+    test_evalPartialDeriv2()
+    test_grad_descent4_1()
+    test_grad_descent4_2()
+    test_grad_descent4_3()
+    test_grad_refer_solver()
+    test_grad_descent5()     
+    test_grad_descent5a()
 

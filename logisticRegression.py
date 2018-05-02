@@ -83,7 +83,8 @@ def testLRGaga2(kFeatures=50,bs=4,ts=10):
     log.warn('scaled A: %f'%(gs[0]))
     log.warn('scaled B: %f'%(gs[1]))
 
-log.basicConfig(level=log.WARN)
-log.info('start %s'%(log.getLogger().level))
+if __name__ == "__main__":
+    log.basicConfig(level=log.WARN)
+    log.info('start %s'%(log.getLogger().level))
 
-testLRGaga2(kFeatures=10,bs=2,ts=10)
+    testLRGaga2(kFeatures=10,bs=2,ts=10)
