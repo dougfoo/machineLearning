@@ -74,13 +74,70 @@ def test_lr_gaga_solver_3():
     assert (round(gs[1],2) == round(gs1[1],2))
     assert (round(gs[2],2) == round(gs1[2],2))
 
+# test with mike eng's dataset
+def testLRGaga():
+    trainingMatrix,yArr,labels,fnames = getGagaData(maxrows=300,maxfeatures=20)
+
+    log.debug (trainingMatrix)
+    log.debug (yArr)
+
+    ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
+    xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
+
+    c,g,h,y = sp.symbols('c g h y')
+    h = (sp.Matrix([ts])*sp.Matrix(xs))[0] # multipy ts's * xs's ( ts * xs.T )
+    g = 1 / (1+mp.e**-h)   # wrap h in sigmoid 
+    c = -y*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
+
+    log.warn ('g: %s',g)
+    log.warn ('c: %s',c)
+    log.warn ('tMatrix: %s',trainingMatrix)
+    log.warn ('yArr: %s',yArr)
+    log.warn('columns: %s',labels)
+    grad_descent4(g,c,trainingMatrix,yArr)
+    print 'done'
+
+def testLRGaga2(kFeatures=50,ts=10):
+    print (inspect.currentframe().f_code.co_name)
+    trainingMatrix,yArr,labels,fnames = fe.getGagaData(maxrows=ts,stopwords='english')
+    t1 = np.array(trainingMatrix)
+
+    # SelectKBest 
+    from sklearn.feature_selection import SelectKBest
+    from sklearn.feature_selection import chi2
+    X, y = t1, yArr
+    log.warn('Orig size: %s'%(str(X.shape)))
+    model = SelectKBest(chi2, k=kFeatures)
+    X_new = model.fit_transform(X, y)   # need to keep labels
+    log.warn('KBest %d applied %s'%(kFeatures, str(X_new.shape)))
+    df = pandas.DataFrame(X_new)
+    picklist = model.get_support(True)
+    pickwords = [labels[p] for p in picklist]
+
+    # reduce to K features
+    df = pandas.DataFrame(trainingMatrix, columns=labels)
+    df = df[pickwords]
+    print(df.shape)
+    print(df.describe())
+    print(df)
+    print(yArr)
+    trainingMatrix = df.as_matrix()
+    labels = pickwords
+ 
+    m1,c1 = fe.countWords2(trainingMatrix, labels, fnames)
+
+    gs = grad_descent5(lambda y,x: sigmoid(x)-y,sigmoidCost,trainingMatrix,yArr,step=0.01,step_limit=0.00001,loop_limit=100)    
+    log.warn('guesses: %s', gf(gs))
+    log.warn('reduced matrix: %s'%str(m1)) 
+
+
 if __name__ == "__main__":
     log.getLogger().setLevel(log.WARN)
 
     # test_lr_gaga_solver_1()
     # test_lr_gaga_solver_2()
-    test_lr_gaga_solver_3()
-
+    #test_lr_gaga_solver_3()
+    testLRGaga2(kFeatures=50,ts=100)
 
 
 
