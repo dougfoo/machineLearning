@@ -101,7 +101,7 @@ def plotLine(ax,A,B,min=0,max=5000):
 
 
 # generic solver takes in hypothesis function, cost func, training matrix, theta array, yarray
-def grad_descent4(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, step_limit=0.00001, batchSize=None):
+def grad_descent_sympy(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit=50, step_limit=0.00001, batchSize=None):
     guesses = [0.01]*len(trainingMatrix[0])    # initial guess for all 
     costChange = 1.0
     if (batchSize == None):

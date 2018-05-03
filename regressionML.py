@@ -4,6 +4,7 @@ import sympy as sp
 from sympy.core.compatibility import as_int
 import sympy.concrete.summations as sum
 from myutils import *
+from solvers import *
 from sklearn.utils import shuffle
 import argparse
 

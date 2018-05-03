@@ -6,6 +6,8 @@ import pandas, inspect
 from mpmath import *
 import numpy as np
 import logging as log
+from gdsolvers import *
+
 
 def inc(x):
     print (inspect.currentframe().f_code.co_name)
@@ -33,7 +35,7 @@ def test_lr_gaga_solver_1():
     log.error('init func: %s, training size: %d' %(str(f),len(trainingMatrix)))
     log.warn('ts: %s / xs: %s',ts,xs)
 
-    gs = grad_descent4(f,costF,trainingMatrix,yArr,step=0.01,step_limit=0.00001,loop_limit=50)    
+    gs = grad_descent_sympy(f,costF,trainingMatrix,yArr,step=0.01,step_limit=0.00001,loop_limit=50)    
     assert (round(gs[0],2) == 0.33)
     assert (round(gs[1],2) == -0.34)
 
@@ -55,7 +57,7 @@ def test_lr_gaga_solver_2():
     log.error('init func: %s, training size: %d' %(str(f),len(trainingMatrix)))
     log.warn('ts: %s / xs: %s',ts,xs)
 
-    gs = grad_descent4(f,costF,trainingMatrix,yArr,step=0.01,step_limit=0.00001,loop_limit=10,batchSize=2)    
+    gs = grad_descent_sympy(f,costF,trainingMatrix,yArr,step=0.01,step_limit=0.00001,loop_limit=10,batchSize=2)    
     assert (round(gs[0],2) == 0.15)
     assert (round(gs[1],2) == 0.05)
     assert (round(gs[2],2) == -0.12)
@@ -94,7 +96,7 @@ def testLRGagaGD4():
     log.warn ('tMatrix: %s',trainingMatrix)
     log.warn ('yArr: %s',yArr)
     log.warn('columns: %s',labels)
-    gs = grad_descent4(g,c,trainingMatrix,yArr,loop_limit=10,batchSize=4)
+    gs = grad_descent_sympy(g,c,trainingMatrix,yArr,loop_limit=10,batchSize=4)
     log.error(gs)
     assert(round(gs[0],2) == 0.02)
     assert(round(gs[1],2) == 0.01)

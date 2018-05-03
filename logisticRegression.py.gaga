@@ -13,7 +13,7 @@ def setupTestData():
     return df
 
 # generic solver takes in hypothesis function, cost func, training matrix, theta array, yarray
-def grad_descent4(hFunc, cFunc, trainingMatrix, thetaArr, yArr):
+def grad_descent_sympy(hFunc, cFunc, trainingMatrix, thetaArr, yArr):
     guesses = [1.0]*len(yArr)    # initial guess for all 
     step = 0.0001        # init step
     step_limit = 0.0001  # when to stop, when cost stops changing
