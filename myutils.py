@@ -173,7 +173,7 @@ def evalPartialDeriv2(f,theta,ts,xs,trainingMatrix,guesses,yArr):
     log.info ('    --> pdcost %f ;  %s  ;  %s: '%(pdcost,str(f),str(theta)))
     return pdcost
 
-#reference impl for mean_square cost
+#reference impl for mean_square cost see: https://stackoverflow.com/questions/47795918/logistic-regression-gradient-descent
 def gradient_descent_simple(step, xMatrix, yArr, step_limit):
     m = len(xMatrix) # number of samples
     theta = [0.01]*len(xMatrix[0]) # init guesses
@@ -187,39 +187,32 @@ def gradient_descent_simple(step, xMatrix, yArr, step_limit):
         log.warn("iter %s | J: %.3f | theta %s grad %s" % (iter, J, theta, gradient))
     return theta
 
-
 # generic solver, errorFunc(y,x), costFunc(y,x), xArr (np.array), yArr (np.array)
 def grad_descent5(eFunc, cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.00001, batchSize=None):
-    if (batchSize == None):
-        batchSize = len(xArr)  #@todo can i set this in func param, or reduce to single expr
-    batchSize = min(len(xArr),batchSize)
+    batchSize = len(xArr) if batchSize == None else min(len(xArr),batchSize)
     guesses = [0.01]*len(xArr[0])  # initial guess for all 
-    costChange = 1.0
-    costSum = 1.0  # dummy start
-    xArr = shuffle(xArr, random_state=0)  # must shuffle both xArr,yArr together w/ same seed !!
-    yArr = shuffle(yArr, random_state=0) 
+    costChange = costSum = 1.0
+    xArr,yArr = shuffle(xArr, random_state=0), shuffle(yArr, random_state=0)  # perhaps should shuffle inside outer loop
     
     i=j=l=0
     while (abs(costChange) > step_limit and l<loop_limit):  # outer loop batch chunk
         i=j=k=0
         k = j+batchSize if j+batchSize<len(xArr) else len(xArr)
-        xBatch = xArr[j:k]
-        yBatch = yArr[j:k]
+        xBatch,yBatch = xArr[j:k],yArr[j:k]
         log.debug('outer - batch %d, j: %d, k: %d'%(len(xBatch),j,k))
 
         while (i < len(xArr)/batchSize):  # inner batch size loop, min 1x loop
             previousCost = costSum
-            xEval = np.dot(xBatch, guesses)  # array of X*0 "scores"
+            xEval = np.dot(xBatch, guesses)  # array of X*0 evaluations
             error = eFunc(yBatch, xEval)     # errorFunc could be x-y or sig(x)-y   
-            costSum = cFunc(yBatch,error+yBatch)  # xEval derived ~= error+yBatch [error = sig(x)-y or x-y which works]
-            guesses = guesses - step * np.dot(xBatch.T, error) * 2.0/len(xBatch)  #ng: 0:=0 - a/m * X.T*(g(X*0) - Y)
+            costSum = cFunc(yBatch,error+yBatch)  # cFunc log_loss, or mean_error_square, or custom.  xEval = error+yBatch in case of sig(x)
+            guesses = guesses - step * np.dot(xBatch.T, error) * 2.0/len(xBatch)  # ng std formula: 0 := 0 - a/m * X.T*(g(X*0) - Y)
             costChange = previousCost-costSum
             log.warn('l=%d,i=%d,bs=%d,costChange=%f,cost=%f, guesses=%s'%(l,i,batchSize, costChange,costSum,gf(guesses)))
 
             j = k
             k = j+batchSize if j+batchSize<len(xArr) else len(xArr)
-            xBatch = xArr[j:k]
-            yBatch = np.asarray(yArr[j:k])
+            xBatch,yBatch = xArr[j:k],yArr[j:k]
             i += 1
             l += 1
     return guesses
@@ -245,19 +238,22 @@ if __name__ == "__main__":
     err = log_loss(yArr, xEval)
     log.warn('init err/cost: %f'%err)
 
-    gs = grad_descent5(lambda y,x: sigmoid(x)-y,log_loss,trainingMatrix,yArr,step=0.005,loop_limit=100)    
-    log.warn('final: %s'%gs)
+#    gs = grad_descent5(lambda y,x: sigmoid(x)-y,log_loss,trainingMatrix,yArr,step=0.1,step_limit=0.000001,loop_limit=1000, batchSize=4)    
+#    log.warn('final: %s'%gs)
 
-    # gs = gradient_descent_simple_log(0.005, trainingMatrix, yArr, 10)
-    # log.warn('final: %s'%gs)
+    gs = gradient_descent_simple(0.0075, trainingMatrix, yArr, 100)
+    log.warn('final: %s'%gs)
 
     X = np.asmatrix(trainingMatrix)
     Y = yArr
-    log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
+#    log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
 
     from sklearn.linear_model import LogisticRegression
     log_reg = LogisticRegression()
     log_reg.fit(X,Y)
-    print ('scikit solution:',log_reg.coef_)
-    print ('scikit intercept?',log_reg.intercept_)
+    print ('scikit log_reg solution:',gf(log_reg.coef_[0]))
+    print ('scikit log_reg intercept?',log_reg.intercept_)
+
+    assert(round(gs[0],1) == round(log_reg.coef_[0][0],1))
+    assert(round(gs[1],1) == round(log_reg.coef_[0][1],1))
 

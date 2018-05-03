@@ -75,8 +75,8 @@ def test_lr_gaga_solver_3():
     assert (round(gs[2],2) == round(gs1[2],2))
 
 # test with mike eng's dataset
-def testLRGaga():
-    trainingMatrix,yArr,labels,fnames = getGagaData(maxrows=300,maxfeatures=20)
+def testLRGagaGD4():
+    trainingMatrix,yArr,labels,fnames = getGagaData(maxrows=10,maxfeatures=10)
 
     log.debug (trainingMatrix)
     log.debug (yArr)
@@ -94,12 +94,15 @@ def testLRGaga():
     log.warn ('tMatrix: %s',trainingMatrix)
     log.warn ('yArr: %s',yArr)
     log.warn('columns: %s',labels)
-    grad_descent4(g,c,trainingMatrix,yArr)
-    print 'done'
+    gs = grad_descent4(g,c,trainingMatrix,yArr,loop_limit=10,batchSize=4)
+    log.error(gs)
+    assert(round(gs[0],2) == 0.02)
+    assert(round(gs[1],2) == 0.01)
 
-def testLRGaga2(kFeatures=50,ts=10):
+# test with mike eng's dataset
+def testLRGagaGD5(kFeatures=50,maxRows=100,loops=100):
     print (inspect.currentframe().f_code.co_name)
-    trainingMatrix,yArr,labels,fnames = fe.getGagaData(maxrows=ts,stopwords='english')
+    trainingMatrix,yArr,labels,fnames = fe.getGagaData(maxrows=maxRows,stopwords='english')
     t1 = np.array(trainingMatrix)
 
     # SelectKBest 
@@ -126,9 +129,20 @@ def testLRGaga2(kFeatures=50,ts=10):
  
     m1,c1 = fe.countWords2(trainingMatrix, labels, fnames)
 
-    gs = grad_descent5(lambda y,x: sigmoid(x)-y,sigmoidCost,trainingMatrix,yArr,step=0.01,step_limit=0.00001,loop_limit=100)    
-    log.warn('guesses: %s', gf(gs))
+    gs = grad_descent5(lambda y,x: sigmoid(x)-y,sigmoidCost,trainingMatrix,yArr,step=0.1,step_limit=0.000000001,loop_limit=loops)    
     log.warn('reduced matrix: %s'%str(m1)) 
+    log.warn('guesses: %s', gf(gs))
+
+    X = np.asmatrix(trainingMatrix)
+    Y = yArr
+    from sklearn.linear_model import LogisticRegression
+    log_reg = LogisticRegression()
+    log_reg.fit(X,Y)
+    print ('scikit log_reg solution:',gf(log_reg.coef_[0]))
+    print ('scikit log_reg intercept?',log_reg.intercept_)
+
+    assert(round(gs[0],1) == round(log_reg.coef_[0][0],1))
+    assert(round(gs[1],1) == round(log_reg.coef_[0][1],1))
 
 
 if __name__ == "__main__":
@@ -136,8 +150,10 @@ if __name__ == "__main__":
 
     # test_lr_gaga_solver_1()
     # test_lr_gaga_solver_2()
-    #test_lr_gaga_solver_3()
-    testLRGaga2(kFeatures=50,ts=100)
+    # test_lr_gaga_solver_3()
+    # testLRGagaGD4()
+    # testLRGagaGD5(kFeatures=50,maxRows=100)
+    testLRGagaGD5(kFeatures=5,maxRows=30,loops=100)
 
 
 
