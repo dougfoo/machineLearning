@@ -1,3 +1,5 @@
 {
+  "test_gdsolvers.py::test_grad_descent5_logr_vs_ref": true, 
+  "test_logistic.py::testLRGagaGD5": true, 
   "test_myutils.py::test_grad_descent_sympy": true
 }

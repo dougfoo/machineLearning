@@ -81,7 +81,7 @@ def evalPartialDeriv2(f,theta,ts,xs,trainingMatrix,guesses,yArr):
     return pdcost
 
 #reference impl for mean_square cost see: https://stackoverflow.com/questions/47795918/logistic-regression-gradient-descent
-def gradient_descent_mse(step, xMatrix, yArr, step_limit):
+def gradient_descent_mse(xMatrix, yArr, step_limit, step):
     m = len(xMatrix) # number of samples
     theta = [0.01]*len(xMatrix[0]) # init guesses
     x_transpose = xMatrix.transpose()
@@ -94,8 +94,8 @@ def gradient_descent_mse(step, xMatrix, yArr, step_limit):
         log.warn("iter %s | J: %.3f | theta %s grad %s" % (iter, J, theta, gradient))
     return theta
 
-#reference impl for mean_square cost see: https://stackoverflow.com/questions/47795918/logistic-regression-gradient-descent
-
+# reference impl for mean_square cost see: https://stackoverflow.com/questions/47795918/logistic-regression-gradient-descent
+# annoying Y has to be a np.array.T columns... 
 def gradient_descent_logr(X,Y,iterations=500, learning_rate=0.5):
     def gradient_Descent(theta, alpha, x , y):
         m = x.shape[0]
@@ -119,11 +119,17 @@ def gradient_descent_logr(X,Y,iterations=500, learning_rate=0.5):
     return Theta
 
 # compare using standard scikit learn logistic regression 
-def sklearn_comp(X,Y):
+def sklearn_logr_comp(X,Y):
     from sklearn.linear_model import LogisticRegression
-    log_reg = LogisticRegression()
-    log_reg.fit(X,Y)
-    return log_reg.coef_[0]
+    l_reg = LogisticRegression()
+    l_reg.fit(X,Y)
+    return l_reg.coef_, l_reg.intercept_
+
+def sklearn_linr_comp(X,Y):
+    from sklearn.linear_model import LinearRegression
+    l_reg = LinearRegression()
+    l_reg.fit(X,Y)
+    return l_reg.coef_, l_reg.intercept_
 
 # generic solver, errorFunc(y,x), costFunc(y,x), xArr (np.array), yArr (np.array)
 def grad_descent5(eFunc, cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit=0.00001, batchSize=None):
@@ -179,7 +185,8 @@ if __name__ == "__main__":
 #    gs = grad_descent5(lambda y,x: sigmoid(x)-y,log_loss,trainingMatrix,yArr,step=0.1,step_limit=0.000001,loop_limit=1000, batchSize=4)    
 #    log.warn('final: %s'%gs)
 
-    gs = gradient_descent_mse(0.0075, trainingMatrix, yArr, 100)
+    Y2=np.array(yArr).reshape([-1, 1])
+    gs = gradient_descent_logr(trainingMatrix, Y2, 500, 0.5)
     log.warn('final: %s'%gs)
 
     X = np.asmatrix(trainingMatrix)

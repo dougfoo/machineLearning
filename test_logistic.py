@@ -140,7 +140,7 @@ def testLRGagaGD5(kFeatures=50,maxRows=100,loops=100):
     from sklearn.linear_model import LogisticRegression
     log_reg = LogisticRegression()
     log_reg.fit(X,Y)
-    print ('scikit log_reg solution:',gf(log_reg.coef_[0]))
+    print ('scikit log_reg solution:',log_reg.coef_)
     print ('scikit log_reg intercept?',log_reg.intercept_)
 
     assert(round(gs[0],1) == round(log_reg.coef_[0][0],1))
@@ -150,11 +150,11 @@ def testLRGagaGD5(kFeatures=50,maxRows=100,loops=100):
 if __name__ == "__main__":
     log.getLogger().setLevel(log.WARN)
 
-    # test_lr_gaga_solver_1()
-    # test_lr_gaga_solver_2()
-    # test_lr_gaga_solver_3()
-    # testLRGagaGD4()
-    # testLRGagaGD5(kFeatures=50,maxRows=100)
+    test_lr_gaga_solver_1()
+    test_lr_gaga_solver_2()
+    test_lr_gaga_solver_3()
+    testLRGagaGD4()
+    testLRGagaGD5(kFeatures=50,maxRows=100)
     testLRGagaGD5(kFeatures=5,maxRows=30,loops=100)
 
 

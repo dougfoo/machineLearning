@@ -5,7 +5,6 @@ import inspect
 import numpy as np
 from sklearn.metrics import *
 
-
 def test_dummy():
     print (inspect.currentframe().f_code.co_name)
     assert (1+3) == 4
@@ -175,10 +174,11 @@ def test_grad_descent_logr():
     Y = np.array([0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1])
     Y2 = Y.reshape([-1, 1])  # reshape Y so it's column vector so matrix multiplication is easier
     gs = gradient_descent_logr(X, Y2)
-    print ('grad_logr',gs)
+    log.warn('grad_logr %s'%gs)
 
-    gs2 = sklearn_comp(X,Y)
-    print ('scikit logreg',gs2)
+    gs2,intercept = sklearn_logr_comp(X,Y)
+    log.warn ('scikit log_reg coef: %s'%gs2)
+    log.warn ('scikit log_reg intercept %s'%intercept)
 
 
 def test_grad_descent5_logr():
@@ -196,10 +196,11 @@ def test_grad_descent5_logr():
     log.warn('final: %s'%gs)
 
     gs = gradient_descent_logr(X, Y2)
-    print ('grad_logr',gs)
+    log.warn('grad_logr %s'%gs)
 
-    gs2 = sklearn_comp(X,Y)
-    print ('scikit logreg',gs2)
+    gs2,intercept = sklearn_logr_comp(X,Y)
+    log.warn ('scikit log_reg coef: %s'%gs2)
+    log.warn ('scikit log_reg intercept %s'%intercept)
 
 def test_grad_descent5_logr_vs_ref():
     print (inspect.currentframe().f_code.co_name)
@@ -213,12 +214,14 @@ def test_grad_descent5_logr_vs_ref():
     Y2 = Y.reshape([-1, 1])  # reshape Y so it's column vector so matrix multiplication is easier
 
     gs = grad_descent5(lambda y,x: sigmoid(x)-y,log_loss,X,Y,step=0.5,step_limit=0.000001,loop_limit=500, batchSize=20)    
-    log.warn('final: %s'%gs)
-    gs2 = gradient_descent_logr(X, Y2, 500, 0.5)
-    print ('grad_logr',gs2)
+    log.warn('grad_descent5: %s'%gs)
 
-    gs3 = sklearn_comp(X,Y)
-    print ('scikit logreg',gs3)
+    gs2 = gradient_descent_logr(X, Y2, 500, 0.001)
+    log.warn('gradient_descent_logr %s'%gs2)
+
+    gs3,intercept = sklearn_logr_comp(X,Y)
+    log.warn ('scikit log_reg coef: %s'%gs3)
+    log.warn ('scikit log_reg intercept %s'%intercept)
 
     assert(round(gs[0],2) == round(gs2[0],2))
     assert(round(gs[1],2) == round(gs2[1],2))
@@ -228,11 +231,17 @@ def test_grad_descent_mse():
     trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
     yArr = [8,18,42]
 
-    gs = gradient_descent_mse(0.005, trainingMatrix, yArr, 1000)
+    gs = gradient_descent_mse(trainingMatrix, yArr, 1000,0.005)
     log.warn('final: %s'%gs)
     X = np.asmatrix(trainingMatrix)
     Y = yArr
     log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
+
+    from sklearn.linear_model import LinearRegression
+    log_reg = LinearRegression()
+    log_reg.fit(X,Y)
+    log.warn ('scikit log_reg coef: %s'%log_reg.coef_)
+    log.warn ('scikit log_reg intercept %s'%log_reg.intercept_)
 
     assert(round(gs[0],2) == -1.58)
     assert(round(gs[1],2) == 2.14)    
@@ -242,7 +251,7 @@ def test_grad_descent_mse_2():
     trainingMatrix = np.array([[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8]])
     yArr = [14,16,18,20,21,22,22]
 
-    gs = gradient_descent_mse(0.005, trainingMatrix, yArr, 1000)
+    gs = gradient_descent_mse(trainingMatrix, yArr, 1000, 0.005)
     log.warn('final: %s'%gs)
     X = np.asmatrix(trainingMatrix)
     Y = yArr

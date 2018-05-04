@@ -29,8 +29,10 @@ def test_grad_descent5_logr_vs_ref():
     gs2 = gradient_descent_logr(X, Y2, 5000, 0.5)
     print ('grad_logr',gs2)
 
-    gs3 = sklearn_comp(X,Y)
-    print ('scikit logreg',gs3)
+    from sklearn.linear_model import LogisticRegression
+    l_reg = LogisticRegression(C=0.00001,tol=0.0000001,fit_intercept=True)
+    l_reg.fit(X,Y)
+    print(l_reg.coef_, l_reg.intercept_)
 
     assert(round(gs[0],2) == round(gs2[0],2))
     assert(round(gs[1],2) == round(gs2[1],2))
