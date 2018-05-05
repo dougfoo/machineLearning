@@ -46,8 +46,8 @@ def grad_descent_sympy(hFunc, cFunc, trainingMatrix, yArr, step=0.01, loop_limit
             previousCost = cost
             cost = costF.subs(zip(ts,guesses))
             costChange = previousCost-cost
-            log.warn('l=%d,bs=%d,costChange=%f,cost=%f, guesses=%s'%(l,batchSize, costChange,cost,gf(guesses)))
-
+            if l % 50 == 0:
+                log.warn('l=%d,bs=%d,costChange=%f,cost=%f, guesses=%s'%(l,batchSize, costChange,cost,gf(guesses)))
             j = k
             k = j+batchSize if j+batchSize<len(trainingMatrix) else len(trainingMatrix)
             dataBatch = trainingMatrix[j:k]
@@ -81,7 +81,7 @@ def evalPartialDeriv2(f,theta,ts,xs,trainingMatrix,guesses,yArr):
     return pdcost
 
 #reference impl for mean_square cost see: https://stackoverflow.com/questions/47795918/logistic-regression-gradient-descent
-def gradient_descent_mse(xMatrix, yArr, step_limit, step):
+def grad_descent_linr_mse(xMatrix, yArr, step_limit, step):
     m = len(xMatrix) # number of samples
     theta = [0.01]*len(xMatrix[0]) # init guesses
     x_transpose = xMatrix.transpose()
@@ -96,7 +96,10 @@ def gradient_descent_mse(xMatrix, yArr, step_limit, step):
 
 # reference impl for mean_square cost see: https://stackoverflow.com/questions/47795918/logistic-regression-gradient-descent
 # annoying Y has to be a np.array.T columns... 
-def gradient_descent_logr(X,Y,iterations=500, learning_rate=0.5):
+def grad_descent_logr(X,Y,iterations=500, learning_rate=0.5):
+    if (Y.ndim != 2):
+        Y = Y.reshape([-1,1])
+
     def gradient_Descent(theta, alpha, x , y):
         m = x.shape[0]
         h = sigmoid(np.matmul(x, theta))
@@ -143,7 +146,6 @@ def grad_descent5(eFunc, cFunc, xArr, yArr, step=0.01, loop_limit=50, step_limit
         i=j=k=0
         k = j+batchSize if j+batchSize<len(xArr) else len(xArr)
         xBatch,yBatch = xArr[j:k],yArr[j:k]
-        log.debug('outer - batch %d, j: %d, k: %d'%(len(xBatch),j,k))
 
         while (i < len(xArr)/batchSize):  # inner batch size loop, min 1x loop
             previousCost = costSum
@@ -186,7 +188,7 @@ if __name__ == "__main__":
 #    log.warn('final: %s'%gs)
 
     Y2=np.array(yArr).reshape([-1, 1])
-    gs = gradient_descent_logr(trainingMatrix, Y2, 500, 0.5)
+    gs = grad_descent_logr(trainingMatrix, Y2, 500, 0.5)
     log.warn('final: %s'%gs)
 
     X = np.asmatrix(trainingMatrix)
@@ -199,6 +201,6 @@ if __name__ == "__main__":
     print ('scikit log_reg solution:',gf(log_reg.coef_[0]))
     print ('scikit log_reg intercept?',log_reg.intercept_)
 
-    assert(round(gs[0],1) == round(log_reg.coef_[0][0],1))
-    assert(round(gs[1],1) == round(log_reg.coef_[0][1],1))
+#    assert(round(gs[0],1) == round(log_reg.coef_[0][0],1))
+#    assert(round(gs[1],1) == round(log_reg.coef_[0][1],1))
 

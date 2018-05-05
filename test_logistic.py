@@ -7,17 +7,10 @@ from mpmath import *
 import numpy as np
 import logging as log
 from gdsolvers import *
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
 
-
-def inc(x):
-    print (inspect.currentframe().f_code.co_name)
-    return x + 1
-
-def test_inc():
-    print (inspect.currentframe().f_code.co_name)
-    assert(4 == inc(3))
-
-def test_lr_gaga_solver_1():
+def test_grad_descent_sympy_lr_1():
     print (inspect.currentframe().f_code.co_name)
     yArr = [1,0]
     trainingMatrix = np.array([[4,0],[0,5]])  #dummy data 1's, word1, word2 -- first row gaga, 2nd non
@@ -39,7 +32,7 @@ def test_lr_gaga_solver_1():
     assert (round(gs[0],2) == 0.33)
     assert (round(gs[1],2) == -0.34)
 
-def test_lr_gaga_solver_2():
+def test_grad_descent_sympy_lr_2():
     print (inspect.currentframe().f_code.co_name)
     yArr = [1,1,0,0]
     trainingMatrix = np.array([[12,5,1,2],[10,5,3,1],[0,1,8,2],[2,1,7,7]])  #dummy data 1's, word1, word2 -- first row gaga, 2nd non
@@ -63,7 +56,7 @@ def test_lr_gaga_solver_2():
     assert (round(gs[2],2) == -0.12)
     assert (round(gs[3],2) == -0.06)
 
-def test_lr_gaga_solver_3():
+def test_grad_descent5_lr_1():
     print (inspect.currentframe().f_code.co_name)
     yArr = np.array([1,1,0,0,0])
     trainingMatrix = np.array([[12,5,1,2,1],[10,5,3,1,2],[0,1,8,2,1],[2,1,7,7,9]])  #dummy data 1's, word1, word2 -- first row gaga, 2nd non
@@ -77,7 +70,7 @@ def test_lr_gaga_solver_3():
     assert (round(gs[2],2) == round(gs1[2],2))
 
 # test with mike eng's dataset
-def testLRGagaGD4():
+def test_lady_gaga_sympy_1():
     trainingMatrix,yArr,labels,fnames = getGagaData(maxrows=10,maxfeatures=10)
 
     log.debug (trainingMatrix)
@@ -102,14 +95,12 @@ def testLRGagaGD4():
     assert(round(gs[1],2) == 0.01)
 
 # test with mike eng's dataset
-def testLRGagaGD5(kFeatures=50,maxRows=100,loops=100):
+def test_lady_gaga_gd5_1(kFeatures=50,maxRows=100,loops=500):
     print (inspect.currentframe().f_code.co_name)
     trainingMatrix,yArr,labels,fnames = fe.getGagaData(maxrows=maxRows,stopwords='english')
     t1 = np.array(trainingMatrix)
 
     # SelectKBest 
-    from sklearn.feature_selection import SelectKBest
-    from sklearn.feature_selection import chi2
     X, y = t1, yArr
     log.warn('Orig size: %s'%(str(X.shape)))
     model = SelectKBest(chi2, k=kFeatures)
@@ -122,10 +113,6 @@ def testLRGagaGD5(kFeatures=50,maxRows=100,loops=100):
     # reduce to K features
     df = pandas.DataFrame(trainingMatrix, columns=labels)
     df = df[pickwords]
-    print(df.shape)
-    print(df.describe())
-    print(df)
-    print(yArr)
     trainingMatrix = df.as_matrix()
     labels = pickwords
  
@@ -140,22 +127,45 @@ def testLRGagaGD5(kFeatures=50,maxRows=100,loops=100):
     from sklearn.linear_model import LogisticRegression
     log_reg = LogisticRegression()
     log_reg.fit(X,Y)
-    print ('scikit log_reg solution:',log_reg.coef_)
-    print ('scikit log_reg intercept?',log_reg.intercept_)
+    log.warn ('scikit log_reg solution:%s '%log_reg.coef_)
+    log.warn ('scikit log_reg intercept? %s'%log_reg.intercept_)
 
-    assert(round(gs[0],1) == round(log_reg.coef_[0][0],1))
-    assert(round(gs[1],1) == round(log_reg.coef_[0][1],1))
+    assert(round(gs[0],2) == 0.30)
+    assert(round(gs[1],2) == 1.36)
+    assert(round(gs[6],2) == -0.70)
 
+def test_grad_descent5_logr_vs_ref():
+    print (inspect.currentframe().f_code.co_name)
+    X = np.asarray([
+        [0.50],[0.75],[1.00],[1.25],[1.50],[1.75],[1.75],
+        [2.00],[2.25],[2.50],[2.75],[3.00],[3.25],[3.50],
+        [4.00],[4.25],[4.50],[4.75],[5.00],[5.50]])
+    ones = np.ones(X.shape)  
+    X = np.hstack([ones, X])  # makes it [[1,.5][1,.75]...]
+    Y = np.array([0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1])
+    Y2 = Y.reshape([-1, 1])  # reshape Y so it's column vector so matrix multiplication is easier
+
+    gs = grad_descent5(lambda y,x: sigmoid(x)-y,log_loss,X,Y,step=0.5,step_limit=0.0000001,loop_limit=5000, batchSize=30)    
+    log.warn('final: %s'%gs)
+    gs2 = grad_descent_logr(X, Y2, 5000, 0.5)
+    log.warn('grad_logr'%gs2)
+
+    from sklearn.linear_model import LogisticRegression
+    l_reg = LogisticRegression(C=0.00001,tol=0.0000001,fit_intercept=True)
+    l_reg.fit(X,Y)
+    log.warn('scikit coef: %s'%l_reg.coef_)
+    
+    assert(round(gs[0],1) == round(gs2[0],1))
+    assert(round(gs[1],1) == round(gs2[1],1))
 
 if __name__ == "__main__":
     log.getLogger().setLevel(log.WARN)
 
-    test_lr_gaga_solver_1()
-    test_lr_gaga_solver_2()
-    test_lr_gaga_solver_3()
-    testLRGagaGD4()
-    testLRGagaGD5(kFeatures=50,maxRows=100)
-    testLRGagaGD5(kFeatures=5,maxRows=30,loops=100)
-
+    test_grad_descent_sympy_lr_1()
+    test_grad_descent_sympy_lr_2()
+    test_grad_descent5_lr_1()
+    test_lady_gaga_sympy_1() 
+    test_lady_gaga_gd5_1()
+    test_grad_descent5_logr_vs_ref()  # fails
 
 

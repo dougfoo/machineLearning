@@ -1,6 +1,5 @@
 import time, itertools, os,requests, pandas, io
 import matplotlib.pyplot as plt
-from sklearn.utils import shuffle
 from sklearn.metrics import mean_squared_error,log_loss
 import logging as log
 import sympy as sp
@@ -23,7 +22,10 @@ def churn(d, n):
 
 #guess array formatter to 4d%f
 def gf(guesses):
-    return ["{:0.4f}".format(float(g)) for g in guesses]
+    if (len(guesses)>20):
+        return ["{:0.4f}".format(float(g)) for g in guesses[:20]]
+    else:
+        return ["{:0.4f}".format(float(g)) for g in guesses]
 
 def setupBrainData(max=1000):
     if (os.path.isfile("myDataFrame.csv")):

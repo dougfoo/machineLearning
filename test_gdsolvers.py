@@ -172,14 +172,12 @@ def test_grad_descent_logr():
     ones = np.ones(X.shape)  
     X = np.hstack([ones, X])  # makes it [[1,.5][1,.75]...]
     Y = np.array([0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1])
-    Y2 = Y.reshape([-1, 1])  # reshape Y so it's column vector so matrix multiplication is easier
-    gs = gradient_descent_logr(X, Y2)
+    gs = grad_descent_logr(X, Y)
     log.warn('grad_logr %s'%gs)
 
     gs2,intercept = sklearn_logr_comp(X,Y)
     log.warn ('scikit log_reg coef: %s'%gs2)
     log.warn ('scikit log_reg intercept %s'%intercept)
-
 
 def test_grad_descent5_logr():
     print (inspect.currentframe().f_code.co_name)
@@ -190,14 +188,13 @@ def test_grad_descent5_logr():
     ones = np.ones(X.shape)  
     X = np.hstack([ones, X])  # makes it [[1,.5][1,.75]...]
     Y = np.array([0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1])
-    Y2 = Y.reshape([-1, 1])  # reshape Y so it's column vector so matrix multiplication is easier
 
     gs = grad_descent5(lambda y,x: sigmoid(x)-y,log_loss,X,Y,step=0.5,step_limit=0.000001,loop_limit=500, batchSize=20)    
     log.warn('final: %s'%gs)
+    assert(round(gs[0],2) == -4.02)
+    assert(round(gs[1],2) == 1.48)
 
-    gs = gradient_descent_logr(X, Y2)
-    log.warn('grad_logr %s'%gs)
-
+    ## just for ref:
     gs2,intercept = sklearn_logr_comp(X,Y)
     log.warn ('scikit log_reg coef: %s'%gs2)
     log.warn ('scikit log_reg intercept %s'%intercept)
@@ -211,27 +208,26 @@ def test_grad_descent5_logr_vs_ref():
     ones = np.ones(X.shape)  
     X = np.hstack([ones, X])  # makes it [[1,.5][1,.75]...]
     Y = np.array([0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1])
-    Y2 = Y.reshape([-1, 1])  # reshape Y so it's column vector so matrix multiplication is easier
 
-    gs = grad_descent5(lambda y,x: sigmoid(x)-y,log_loss,X,Y,step=0.5,step_limit=0.000001,loop_limit=500, batchSize=20)    
+    gs = grad_descent5(lambda y,x: sigmoid(x)-y,log_loss,X,Y,step=0.1,step_limit=0.0000001,loop_limit=2000, batchSize=20)    
     log.warn('grad_descent5: %s'%gs)
 
-    gs2 = gradient_descent_logr(X, Y2, 500, 0.001)
-    log.warn('gradient_descent_logr %s'%gs2)
+    gs2 = grad_descent_logr(X, Y, 2000, 0.1)
+    log.warn('grad_descent_logr %s'%gs2)
 
     gs3,intercept = sklearn_logr_comp(X,Y)
     log.warn ('scikit log_reg coef: %s'%gs3)
     log.warn ('scikit log_reg intercept %s'%intercept)
 
-    assert(round(gs[0],2) == round(gs2[0],2))
-    assert(round(gs[1],2) == round(gs2[1],2))
+    assert(round(gs[0],1) == round(gs2[0],1))
+    assert(round(gs[1],1) == round(gs2[1],1))
 
 def test_grad_descent_mse():
     print (inspect.currentframe().f_code.co_name)
     trainingMatrix = np.array([[1,4],[1,10],[1,20]])  # 2 features
     yArr = [8,18,42]
 
-    gs = gradient_descent_mse(trainingMatrix, yArr, 1000,0.005)
+    gs = grad_descent_linr_mse(trainingMatrix, yArr, 1000,0.005)
     log.warn('final: %s'%gs)
     X = np.asmatrix(trainingMatrix)
     Y = yArr
@@ -251,7 +247,7 @@ def test_grad_descent_mse_2():
     trainingMatrix = np.array([[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8]])
     yArr = [14,16,18,20,21,22,22]
 
-    gs = gradient_descent_mse(trainingMatrix, yArr, 1000, 0.005)
+    gs = grad_descent_linr_mse(trainingMatrix, yArr, 1000, 0.005)
     log.warn('final: %s'%gs)
     X = np.asmatrix(trainingMatrix)
     Y = yArr

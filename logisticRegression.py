@@ -1,45 +1,90 @@
 import requests, pandas, io, numpy, argparse, math
-import matplotlib.pyplot as plt
-import sympy as sp
 import numpy as np
 import featureEngineering as fe
-from sympy.core.compatibility import as_int
-import sympy.concrete.summations as sum
 from myutils import *
-from sklearn.utils import shuffle
 from mpmath import *
 from gdsolvers import *
 import logging as log
 import inspect
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+from sklearn.utils import shuffle
 
+# take in x-nparray matrix, and return reduced matrix and labels
+def reduceFeatures(X, Y, labels, kFeatures):
+    # SelectKBest 
+    log.warn('feature reduce KBest: %s'%(str(X.shape)))
+    model = SelectKBest(chi2, k=kFeatures)
+    X_new = model.fit_transform(X, Y)   # need to keep labels
+    log.warn('KBest %d applied %s'%(kFeatures, str(X_new.shape)))
+    df = pandas.DataFrame(X_new)
+    indexes = model.get_support(True)
+    words = [labels[p] for p in indexes]
 
-def test_grad_descent5_logr_vs_ref():
+    # reduce to K features
+    df = pandas.DataFrame(X, columns=labels)
+    df = df[words]
+    X_new = df.as_matrix()
+
+    return X,words
+
+# test with mike eng's dataset
+def test_lady_gaga_gd5_1(kFeatures=50,maxRows=100,loops=100):
     print (inspect.currentframe().f_code.co_name)
-    X = np.asarray([
-        [0.50],[0.75],[1.00],[1.25],[1.50],[1.75],[1.75],
-        [2.00],[2.25],[2.50],[2.75],[3.00],[3.25],[3.50],
-        [4.00],[4.25],[4.50],[4.75],[5.00],[5.50]])
-    ones = np.ones(X.shape)  
-    X = np.hstack([ones, X])  # makes it [[1,.5][1,.75]...]
-    Y = np.array([0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1])
-    Y2 = Y.reshape([-1, 1])  # reshape Y so it's column vector so matrix multiplication is easier
+    xMatrix,yArr,labels,fnames = fe.getGagaData(maxrows=maxRows,stopwords='english')
 
-    gs = grad_descent5(lambda y,x: sigmoid(x)-y,log_loss,X,Y,step=0.5,step_limit=0.0000001,loop_limit=5000, batchSize=30)    
-    log.warn('final: %s'%gs)
-    gs2 = gradient_descent_logr(X, Y2, 5000, 0.5)
-    print ('grad_logr',gs2)
+    xMatrix = shuffle(xMatrix, random_state=0)   
+    yArr = shuffle(yArr, random_state=0) 
 
+    partition = int(.70*len(yArr))
+
+    trainingMatrix = xMatrix[:partition]
+    trainingY = yArr[:partition]
+    testMatrix = xMatrix[partition:]
+    testY = yArr[partition:]
+
+    X = np.array(trainingMatrix)
+    Y = trainingY
+
+    X,rlabels = reduceFeatures(X, Y, labels, kFeatures)
+ 
+    m1,c1 = fe.countWords2(X, labels, fnames)
+    log.warn('reduced matrix: %s'%str(m1)) 
+
+    gs = grad_descent5(lambda y,x: sigmoid(x)-y,sigmoidCost,X,Y,step=0.1,step_limit=0.000000001,loop_limit=loops)
+    log.warn('guesses: %s', gf(gs))
+    
+    testRes = np.dot(testMatrix, gs)
+    testResRound = [round(sigmoid(x),0) for x in testRes]
+    testDiffs = np.array(testResRound) - np.array(testY)
+    print ('raw results',gf(testRes))
+    print ('sig results',gf([sigmoid(x) for x in testRes]))
+    print ('0|1 results',[round(sigmoid(x)) for x in testRes])
+    print (testDiffs)
+    print ('total errors:', sum([abs(x) for x in testDiffs]), 'out of',len(testY))
+    
+#def foo():    
+    # sklearn validation
+    X = np.asmatrix(trainingMatrix)
+    Y = trainingY
     from sklearn.linear_model import LogisticRegression
-    l_reg = LogisticRegression(C=0.00001,tol=0.0000001,fit_intercept=True)
-    l_reg.fit(X,Y)
-    print(l_reg.coef_, l_reg.intercept_)
+    log_reg = LogisticRegression()
+    log_reg.fit(X,Y)
+    log.warn ('scikit log_reg solution:%s '%log_reg.coef_)
+    log.warn ('scikit log_reg intercept? %s'%log_reg.intercept_)
+    log.warn ('model is trained now......')
 
-    assert(round(gs[0],2) == round(gs2[0],2))
-    assert(round(gs[1],2) == round(gs2[1],2))
+    X = np.array(testMatrix)
+    Y = testY
+    c = log_reg.predict(X)  # or can I use score()
+    print (c)
+    print (Y)
+    print (c-Y)
+    print ('scikit total errors:', sum([abs(x) for x in (c-Y)]), 'out of',len(c))
 
 if __name__ == "__main__":
     log.getLogger().setLevel(log.WARN)
 
-    test_grad_descent5_logr_vs_ref()
+    test_lady_gaga_gd5_1(kFeatures=50,maxRows=500,loops=2000)
 
 
