@@ -23,7 +23,7 @@ def churn(d, n):
 #guess array formatter to 4d%f
 def gf(guesses):
     if (len(guesses)>20):
-        return ["{:0.4f}".format(float(g)) for g in guesses[:20]]
+        return ["{:0.4f}".format(float(g)) for g in guesses[:20]] + ['...']
     else:
         return ["{:0.4f}".format(float(g)) for g in guesses]
 
@@ -65,12 +65,12 @@ def getGagaData(maxrows=200,maxfeatures=4000,gtype=None,stopwords=None):
     mat=vec.fit_transform(data)
     yarr = list(target)
     data = mat.toarray()
-    labels = vec.get_feature_names()[0:maxfeatures]
+    features = vec.get_feature_names()[0:maxfeatures]
     # hack trim features by 'maxfeature' param
     if (maxfeatures > len(data[0])):
         maxfeatures = len(data[0]) 
     data = data[:,0:maxfeatures]
-    return data,yarr,labels,fnames
+    return data,yarr,features,fnames
 
 #replicate/grow data
 def makeFakeData():
