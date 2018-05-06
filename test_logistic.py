@@ -134,7 +134,7 @@ def test_lady_gaga_gd5_1(kFeatures=50,maxRows=100,loops=500):
     assert(round(gs[1],2) == 1.36)
     assert(round(gs[6],2) == -0.70)
 
-def test_grad_descent5_logr_vs_ref():
+def test_grad_descent5_logr_vs_scikit():
     print (inspect.currentframe().f_code.co_name)
     X = np.asarray([
         [0.50],[0.75],[1.00],[1.25],[1.50],[1.75],[1.75],
@@ -158,14 +158,37 @@ def test_grad_descent5_logr_vs_ref():
     assert(round(gs[0],1) == round(gs2[0],1))
     assert(round(gs[1],1) == round(gs2[1],1))
 
+
+def test_lady_gaga_sympy_vs_g5():
+    trainingMatrix,yArr,labels,fnames = getGagaData(maxrows=10,maxfeatures=20)
+    ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
+    xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
+
+    c,g,h,y = sp.symbols('c g h y')
+    h = (sp.Matrix([ts])*sp.Matrix(xs))[0] # multipy ts's * xs's ( ts * xs.T )
+    g = 1 / (1+mp.e**-h)   # wrap h in sigmoid 
+    c = -y*sp.log(g) - (1-y)*sp.log(1-g)  # cost func of single sample
+
+    gs,t1 = time_fn(grad_descent_sympy,g,c,trainingMatrix,yArr,step=0.1,step_limit=-1,loop_limit=250,batchSize=4)
+    log.warn('guesses: %s', gf(gs))
+    gs2,t2 = time_fn(grad_descent5,lambda y,x: sigmoid(x)-y,sigmoidCost,trainingMatrix,yArr,step=0.1,step_limit=-1,loop_limit=250,batchSize=4)
+    log.warn('guesses: %s', gf(gs2))
+    log.error('symbolic  time (20 features, 250 loops, bs 4: %s'%t1)
+    log.error('g5 matrix time (20 features, 250 loops, bs 4: %s'%t2)
+    log.error('multiplier: %s'%(t1/t2))
+
+    assert(round(gs[0],2) == round(gs2[0],2))
+    assert(round(gs[1],2) == round(gs2[1],2))
+
 if __name__ == "__main__":
     log.getLogger().setLevel(log.WARN)
+    # test_grad_descent_sympy_lr_1()
+    # test_grad_descent_sympy_lr_2()
+    # test_grad_descent5_lr_1()
+    # test_lady_gaga_sympy_1() 
+    # test_lady_gaga_gd5_1()
+    # test_grad_descent5_logr_vs_scikit()  # fails
+    test_lady_gaga_sympy_vs_g5()
 
-    test_grad_descent_sympy_lr_1()
-    test_grad_descent_sympy_lr_2()
-    test_grad_descent5_lr_1()
-    test_lady_gaga_sympy_1() 
-    test_lady_gaga_gd5_1()
-    test_grad_descent5_logr_vs_ref()  # fails
 
 

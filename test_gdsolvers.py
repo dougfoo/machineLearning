@@ -242,6 +242,45 @@ def test_grad_descent_mse():
     assert(round(gs[0],2) == -1.58)
     assert(round(gs[1],2) == 2.14)    
 
+# sympy perf comparisoin vs grad5 solver
+def test_grad_descent_sympy_vs_grad5():
+    print (inspect.currentframe().f_code.co_name)
+    trainingMatrix = np.array([[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8]])
+    yArr = [14,16,18,20,21,22,22]
+
+    ts = sp.symbols('t:'+str(len(trainingMatrix[0])))  #theta weight/parameter array
+    xs = sp.symbols('x:'+str(len(trainingMatrix[0])))  #feature array
+    y = sp.symbols('y')
+    f = ts[0]*xs[0] + ts[1]*xs[1]
+    cFunc = (f - y)**2  # error squared
+
+    costF = evalSumF2(cFunc,xs,trainingMatrix,yArr)  # cost fun evaluted for testData
+    log.warn('costF %s'%(str(costF)))
+    log.error('init func: %s, training size: %d' %(str(f),len(trainingMatrix)))
+    log.warn('ts: %s / xs: %s',ts,xs)
+
+    gs, t1 = time_fn(grad_descent_sympy,f,costF,trainingMatrix,yArr,step_limit=-1,step=0.03,loop_limit=1000, batchSize=10)
+    log.warn('final: %s %s'%(gs,t1))
+    gs2, t2 = time_fn(grad_descent5,lambda y,x: x-y,mean_squared_error,trainingMatrix,yArr,step_limit=-1,step=0.03,loop_limit=1000,batchSize=10)
+    log.warn('final: %s %s'%(gs2,t2))
+
+    X = np.asmatrix(trainingMatrix)
+    Y = yArr
+    log.warn ('target Linear Reg sol: %s'% str((X.T.dot(X)).I.dot(X.T).dot(Y)))
+
+    assert(round(gs[0],1) == round(gs2[0],1))
+    assert(round(gs[1],1) == round(gs2[1],1))
+ 
+    gs, t3 = time_fn(grad_descent_sympy,f,costF,trainingMatrix,yArr,step_limit=-1,step=0.03,loop_limit=5000, batchSize=1)
+    gs2, t4 = time_fn(grad_descent5,lambda y,x: x-y,mean_squared_error,trainingMatrix,yArr,step_limit=-1,step=0.03,loop_limit=5000,batchSize=1)
+ 
+    log.error('symbolic  time (5000 loops, bs 1: %s'%t3)
+    log.error('g5 matrix time (5000 loops, bs 1: %s'%t4)
+    log.error('symbolic  time (1000 loops, bs 10: %s'%t1)
+    log.error('g5 matrix time (1000 loops, bs 10: %s'%t2)
+    log.error('multiplier: %s'%(t1/t2))
+    log.error('multiplier: %s'%(t3/t4))
+
 def test_grad_descent_mse_2():
     print (inspect.currentframe().f_code.co_name)
     trainingMatrix = np.array([[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8]])
@@ -285,4 +324,4 @@ if __name__ == "__main__":
     test_grad_descent5_mse_2()
     test_grad_descent5_logr()
     test_grad_descent5_logr_vs_ref()
-
+    test_grad_descent_sympy_vs_grad5()

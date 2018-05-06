@@ -64,7 +64,6 @@ def testGagaClassifier(kFeatures,maxRows,loops):
     log.warn (testDiffs)
     log.error ('mymodel errors: %s / %s = %f'%(sum([abs(x) for x in testDiffs]),len(testY),sum([abs(x) for x in testDiffs])/len(testY)))
 
-#def foo():    
     # sklearn validation
     X = np.asmatrix(trainingMatrix)
     X,rfeatures = reduceFeatures(X, Y, features, kFeatures)
