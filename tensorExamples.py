@@ -73,7 +73,6 @@ def test_linreg_tensor():
 
     XT = tf.transpose(X)  
     theta = tf.matmul(tf.matmul(tf.matrix_inverse(tf.matmul(XT,X)),XT),y) #not very natural..for (X^T*T)-1 * X^T*y 
-
     with tf.Session():
         theta_value = theta.eval()
         print (theta_value)
