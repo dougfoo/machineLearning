@@ -5,7 +5,7 @@ import logging as log
 import sympy as sp
 import numpy as np
 
-#return in array with original result in [0], timing in [1]
+#return in array with original result in [0], timing in [1] -- 
 def time_fn( fn, *args, **kwargs ):
     start = time.clock()
     results = fn( *args, **kwargs )
