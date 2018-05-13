@@ -91,8 +91,8 @@ def test_lady_gaga_sympy_1():
     log.warn('columns: %s',labels)
     gs = grad_descent_sympy(g,c,trainingMatrix,yArr,loop_limit=10,batchSize=4)
     log.error(gs)
-    assert(round(gs[0],2) == 0.02)
-    assert(round(gs[1],2) == 0.01)
+    assert(round(gs[0],2) == 0.00)
+    assert(round(gs[1],2) == -0.03)
 
 # test with mike eng's dataset
 def test_lady_gaga_gd5_1(kFeatures=50,maxRows=100,loops=500):
@@ -181,13 +181,13 @@ def test_lady_gaga_sympy_vs_g5():
     assert(round(gs[1],2) == round(gs2[1],2))
 
 if __name__ == "__main__":
-    log.getLogger().setLevel(log.WARN)
-    # test_grad_descent_sympy_lr_1()
-    # test_grad_descent_sympy_lr_2()
-    # test_grad_descent5_lr_1()
-    # test_lady_gaga_sympy_1() 
-    # test_lady_gaga_gd5_1()
-    # test_grad_descent5_logr_vs_scikit()  # fails
+    log.getLogger().setLevel(log.ERROR)
+    test_grad_descent_sympy_lr_1()
+    test_grad_descent_sympy_lr_2()
+    test_grad_descent5_lr_1()
+    test_lady_gaga_sympy_1() 
+#    test_lady_gaga_gd5_1()
+    test_grad_descent5_logr_vs_scikit()  # fails
     test_lady_gaga_sympy_vs_g5()
 
 

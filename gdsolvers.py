@@ -118,7 +118,7 @@ def grad_descent_logr(X,Y,iterations=500, learning_rate=0.5):
     for i in range(iterations):
         Theta = gradient_Descent(Theta, learning_rate, X, Y)
         if i % 50 == 0:
-            print('i',i,'thetas',gf(Theta), 'cost', gf(cost(X, Y, Theta)[0]))
+            log.warn('i %s  thetas %s  cost %s'%(i,gf(Theta), gf(cost(X, Y, Theta)[0])))
     return Theta
 
 # compare using standard scikit learn logistic regression 

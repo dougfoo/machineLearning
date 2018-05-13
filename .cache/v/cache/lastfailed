@@ -1,4 +1,8 @@
 {
-  "test_logistic.py::testLRGagaGD5": true, 
-  "test_myutils.py::test_grad_descent_sympy": true
+  "test_gdsolvers.py::test_grad_descent5_logr_vs_ref": true,
+  "test_logistic.py::test_grad_descent5_logr_vs_scikit": true,
+  "test_logistic.py::test_grad_descent5_lr_1": true,
+  "test_logistic.py::test_lady_gaga_gd5_1": true,
+  "test_logistic.py::test_lady_gaga_sympy_1": true,
+  "test_logistic.py::test_lady_gaga_sympy_vs_g5": true
 }

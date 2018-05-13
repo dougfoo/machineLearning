@@ -47,7 +47,7 @@ def getGagaData(maxrows=200,maxfeatures=4000,gtype=None,stopwords=None):
         for i,fn in enumerate(filenames):
             if (i>=size):
                 break            
-            data=open(dir+'/'+fn,'r').read()
+            data=open(dir+'/'+fn,'r',encoding='utf-8').read()
             ds.append((data,label,fn))
         return i
     ######## Load the raw data
@@ -102,3 +102,11 @@ def plotLine(ax,A,B,min=0,max=5000):
     ax.plot([min,max],[min*A + B,max*A + B])
     plt.pause(0.01)
     return ax
+
+def getLogDir(rootDir='tf_logs'):
+    from datetime import datetime
+    now = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+    root_logdir = rootDir
+    logdir = "{}/run-{}/".format(root_logdir, now)
+    return logdir
+
