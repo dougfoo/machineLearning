@@ -186,53 +186,6 @@ def test_logreg_tensor():
     file_writer.close()
     return best_theta
 
-def test_gaga_tensor():
-    tf.reset_default_graph()
-    n_epochs = 2500
-    learning_rate = 0.01
-
-    X,y,theta,y_pred,features,rfeatures,testMatrix,testY = getGagaTfFormat()
-    m = len(testMatrix[0])
-
-    with tf.name_scope("loss"):
-        error = y_pred - y  # vs ll ?
-        ll = tf.reduce_mean(tf.losses.log_loss(y,y_pred), name='log_loss')  # -log(x) or -log(1-x) ....
-
-    with tf.name_scope("gradients"):
-        gradients = 2.0/m * tf.matmul(tf.transpose(X), error)  # vs ll vs error 
-        training_op = tf.assign(theta, theta - learning_rate * gradients)   # what is this
-
-    ll_summary = tf.summary.scalar('log_loss',ll)
-    file_writer = tf.summary.FileWriter(getLogDir(),tf.get_default_graph())
-    init = tf.global_variables_initializer()
-
-    with tf.Session() as sess:
-        sess.run(init)
-        for epoch in range(n_epochs):
-            if (epoch % 100 == 0):
-                print('Epoch %s Log_Loss %s'%(epoch, ll.eval()))
-                summary_str = ll_summary.eval()  # bug
-                step = epoch
-                file_writer.add_summary(summary_str, step)
-            sess.run(training_op)   # whats an opp
-        best_theta = theta.eval()
-    print(gf(best_theta))   # scores should be similar to sckit and grad5 solver
-    file_writer.close()
-
-    # reduce test set similarly (note below works because we know full set of train+test features ahead of time)    
-    df = pandas.DataFrame(testMatrix, columns=features)   # new df w/ column names
-    X = df[rfeatures].as_matrix()                # filter out only rfeatures
-
-    testRes = np.dot(X, best_theta)
-    testResRound = [round(sigmoid(x),0) for x in testRes]
-    testDiffs = np.array(testResRound) - np.array(testY)
-    log.warn ('raw results %s '%(gf(testRes)))
-    log.warn ('sig results %s'%gf([sigmoid(x) for x in testRes]))
-    log.warn ('0|1 results %s'%([round(sigmoid(x),0) for x in testRes]))
-    log.warn (testDiffs)
-    log.error ('mymodel errors: %s / %s = %f'%(sum([abs(x) for x in testDiffs]),len(testY),sum([abs(x) for x in testDiffs])/len(testY)))
-
-    return best_theta
 
 def test_nn_tensor():
     tf.reset_default_graph()
@@ -284,6 +237,8 @@ def test_nn_tensor():
         for epoc in range(n_epocs):
             for iteration in range(mnist.train.num_examples // batch_size):
                 X_batch, y_batch = mnist.train.next_batch(batch_size)
+                print (X_batch.shape, y_batch.shape)
+                print (y_batch)
                 sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
             acc_train = accuracy.eval(feed_dict={X: X_batch, y: y_batch})
             acc_val = accuracy.eval({X: mnist.validation.images, y: mnist.validation.labels})
@@ -292,59 +247,22 @@ def test_nn_tensor():
 #    file_writer.add_summary(summary_str, step)
     file_writer.close()
 
-def getGagaTfFormat():
-    xMatrix,yArr,features,fnames = fe.getGagaData(maxrows=500,stopwords='english')
-    xMatrix = shuffle(xMatrix, random_state=0)   
-    yArr = shuffle(yArr, random_state=0) 
-
-    partition = int(.70*len(yArr))
-    trainingMatrix = xMatrix[:partition]
-    trainingY = yArr[:partition]
-    testMatrix = xMatrix[partition:]
-    testY = yArr[partition:]
-
-    X = np.array(trainingMatrix)
-    Y = trainingY
-    from logisticRegression import reduceFeatures
-    X,rfeatures = reduceFeatures(X, Y, features, 500)
-
-    # convert to TensorFlow formats
-    xs = X
-    ys = np.array(Y).reshape(-1,1)  #col orient
-#    np.random.seed(42)
-#    guesses = np.random.rand(1,len(xs)).astype('float32') 
-    guesses = np.array([0.01]*len(xs[0]),dtype='float32' ).reshape(-1,1)  # col orient
-    X = tf.constant(xs, dtype=tf.float32, name='X')
-    y = tf.constant(ys, dtype=tf.float32, name='y')
-
-    theta = tf.Variable(tf.constant(guesses), name='theta')
-    y_pred = tf.sigmoid(tf.matmul(X, theta, name='predictions'))
-
-    return X,y, theta, y_pred, features, rfeatures, testMatrix, testY
-
-def test_gaga_nn_tensor():
+# generic test case
+def test_nn2_tensor():
     tf.reset_default_graph()
-
-    X,y,theta,y_pred,features,rfeatures,testMatrix,testY = getGagaTfFormat()
-
-    # boilerplate NN
     n_epocs = 10  #40
-    batch_size = 50
-    learning_rate = 0.01
- 
-    ## NN setup phase
-    n_inputs = 2000  # features/words
-    n_hidden1 = 300
-    n_hidden2 = 100
-    n_outputs = 10
+    learning_rate = 0.05
+    n_hidden1 = 2
+    n_outputs = 1
 
-    X = tf.placeholder(tf.float32, shape=(None, n_inputs), name="X")
-    y = tf.placeholder(tf.int64, shape=(None), name='y')
+    xs = np.array([[10,1],[11,2],[1,6]])
+    ys = np.array([0.9,0,0])  # odd can't use 1.0
+    X = tf.constant(xs, dtype=tf.float32, name='X')
+    y = tf.constant(ys, dtype=tf.int32, name='y')
 
     with tf.name_scope("dnn"):
-        hidden1 = neuron_layer(X, n_hidden1, "hidden1")
-        hidden2 = neuron_layer(hidden1, n_hidden2, "hidden2", activation=tf.nn.relu)
-        logits = neuron_layer(hidden2, n_outputs, "outputs", )
+        hidden1 = neuron_layer(X, n_hidden1, "hidden1", activation=tf.nn.relu)
+        logits = neuron_layer(hidden1, n_outputs, "outputs", )
 
     with tf.name_scope("loss"):
         xentropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y, logits=logits)
@@ -363,21 +281,56 @@ def test_gaga_nn_tensor():
     file_writer = tf.summary.FileWriter(getLogDir(),tf.get_default_graph())
     saver = tf.train.Saver()
 
-    from tensorflow.examples.tutorials.mnist import input_data
-    mnist = input_data.read_data_sets("/tmp/data/")
-
     with tf.Session() as sess:
         init.run()
         for epoc in range(n_epocs):
-            for iteration in range(mnist.train.num_examples // batch_size):
-                X_batch, y_batch = mnist.train.next_batch(batch_size)
-                sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
-            acc_train = accuracy.eval(feed_dict={X: X_batch, y: y_batch})
-#            acc_val = accuracy.eval({X: mnist.validation.images, y: mnist.validation.labels})
-            print (epoc, "train accuracy:", acc_train)
+            sess.run(training_op)
+            print(epoc, "loss:", loss.eval(), "acc", accuracy.eval())
         save_path = saver.save(sess, "./tf_logs/my_model_final.ckpt")
-#    file_writer.add_summary(summary_str, step)
     file_writer.close()
+
+def test_nn3_tensor():
+    tf.reset_default_graph()
+
+    import urllib.request as request
+    import matplotlib.pyplot as plt
+
+    # Download dataset
+    IRIS_TRAIN_URL = "http://download.tensorflow.org/data/iris_training.csv"
+    IRIS_TEST_URL = "http://download.tensorflow.org/data/iris_test.csv"
+
+    names = ['sepal-length', 'sepal-width',
+            'petal-length', 'petal-width', 'species']
+    train = pd.read_csv(IRIS_TRAIN_URL, names=names, skiprows=1)
+    test = pd.read_csv(IRIS_TEST_URL, names=names, skiprows=1)
+
+    # Train and test input data
+    Xtrain = train.drop("species", axis=1)
+    Xtest = test.drop("species", axis=1)
+
+    # Encode target values into binary ('one-hot' style) representation
+    ytrain = pd.get_dummies(train.species)
+    ytest = pd.get_dummies(test.species)
+
+    print (Xtrain.shape, type(Xtrain))
+    print (ytrain.shape, type(ytrain))
+
+
+    # Plot the loss function over iterations
+    num_hidden_nodes = [5, 10, 20]
+    loss_plot = {5: [], 10: [], 20: []}
+    weights1 = {5: None, 10: None, 20: None}
+    weights2 = {5: None, 10: None, 20: None}
+    num_iters = 200
+
+    plt.figure(figsize=(12,8))  
+    for hidden_nodes in num_hidden_nodes:  
+        weights1[hidden_nodes], weights2[hidden_nodes] = create_train_model(hidden_nodes, num_iters, Xtrain, ytrain)
+        plt.plot(range(num_iters), loss_plot[hidden_nodes], label="nn: 4-%d-3" % hidden_nodes)
+
+    plt.xlabel('Iteration', fontsize=12)  
+    plt.ylabel('Loss', fontsize=12)  
+    plt.legend(fontsize=12)  
 
 
 if __name__ == "__main__":
@@ -390,7 +343,7 @@ if __name__ == "__main__":
     # test_grad_tensor_logging()
     # test_mod_tensor()
     # test_logreg_tensor()
-    test_gaga_tensor()
     # test_nn_tensor()
-    # test_gaga_nn_tensor()
+    # test_nn2_tensor()
+    test_nn3_tensor()
 
