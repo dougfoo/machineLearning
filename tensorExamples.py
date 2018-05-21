@@ -188,11 +188,11 @@ def test_logreg_tensor():
 
 def test_gaga_tensor():
     tf.reset_default_graph()
-    n_epochs = 400
+    n_epochs = 2500
     learning_rate = 0.01
 
     X,y,theta,y_pred,features,rfeatures,testMatrix,testY = getGagaTfFormat()
-    m = len(y_pred)
+    m = len(testMatrix[0])
 
     with tf.name_scope("loss"):
         error = y_pred - y  # vs ll ?
@@ -209,7 +209,7 @@ def test_gaga_tensor():
     with tf.Session() as sess:
         sess.run(init)
         for epoch in range(n_epochs):
-            if (epoch % 25 == 0):
+            if (epoch % 100 == 0):
                 print('Epoch %s Log_Loss %s'%(epoch, ll.eval()))
                 summary_str = ll_summary.eval()  # bug
                 step = epoch
@@ -228,7 +228,7 @@ def test_gaga_tensor():
     testDiffs = np.array(testResRound) - np.array(testY)
     log.warn ('raw results %s '%(gf(testRes)))
     log.warn ('sig results %s'%gf([sigmoid(x) for x in testRes]))
-    log.warn ('0|1 results %s'%([round(sigmoid(x)) for x in testRes]))
+    log.warn ('0|1 results %s'%([round(sigmoid(x),0) for x in testRes]))
     log.warn (testDiffs)
     log.error ('mymodel errors: %s / %s = %f'%(sum([abs(x) for x in testDiffs]),len(testY),sum([abs(x) for x in testDiffs])/len(testY)))
 
@@ -373,8 +373,8 @@ def test_gaga_nn_tensor():
                 X_batch, y_batch = mnist.train.next_batch(batch_size)
                 sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
             acc_train = accuracy.eval(feed_dict={X: X_batch, y: y_batch})
-            acc_val = accuracy.eval({X: mnist.validation.images, y: mnist.validation.labels})
-            print (epoc, "train accuracy:", acc_train, "Val accuracy:", acc_val)
+#            acc_val = accuracy.eval({X: mnist.validation.images, y: mnist.validation.labels})
+            print (epoc, "train accuracy:", acc_train)
         save_path = saver.save(sess, "./tf_logs/my_model_final.ckpt")
 #    file_writer.add_summary(summary_str, step)
     file_writer.close()
@@ -390,7 +390,7 @@ if __name__ == "__main__":
     # test_grad_tensor_logging()
     # test_mod_tensor()
     # test_logreg_tensor()
-    # test_gaga_tensor()
+    test_gaga_tensor()
     # test_nn_tensor()
-    test_gaga_nn_tensor()
+    # test_gaga_nn_tensor()
 

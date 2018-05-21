@@ -173,7 +173,7 @@ def sigmoidCost(y,x):
     return sum(ret)/len(y)
 
 def sigmoid(x):
-    return 1.0 / (1 + np.exp(-x))
+    return float(1.0 / (1 + np.exp(-x)))
 
 ## test section
 if __name__ == "__main__":
