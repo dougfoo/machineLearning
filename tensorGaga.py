@@ -61,7 +61,7 @@ def getGagaTfFormat2(maxrows=500):
     trainingY = pd.get_dummies(trainingY)
     testY = pd.get_dummies(testY)
 
-    return trainingX, trainingY, features, rfeatures, testX, testY
+    return trainingX, trainingY, rfeatures, testX, testY
 
 
 def test_gaga_tensor():
@@ -182,21 +182,19 @@ def test_gaga_nn_tensor():
 def test_gaga_nn2_tensor():
     tf.reset_default_graph()
 
-    Xtrain, ytrain, features, rfeatures, Xtest, ytest = getGagaTfFormat2()
+    Xtrain, ytrain, rfeatures, Xtest, ytest = getGagaTfFormat2()
 
     # Plot the loss function over iterations
-    num_hidden_nodes = [5, 10, 20, 50, 100]
-    loss_plot = {5: [], 10: [], 20: [], 50: [], 100: []}
-    weights1 = {5: None, 10: None, 20: None, 50: None, 100: None}
-    weights2 = {5: None, 10: None, 20: None, 50: None, 100: None}
-    num_iters = 2000
+    num_hidden_nodes = [5, 10, 20, 30, 50]
+    loss_plot = {5: [], 10: [], 20: [], 30: [], 50: []}
+    weights1 = {5: None, 10: None, 20: None, 30: None, 50: None}
+    weights2 = {5: None, 10: None, 20: None, 30: None, 50: None}
+    num_iters = 5000
 
     plt.figure(figsize=(12, 8))
-    for hidden_nodes in num_hidden_nodes:
-        weights1[hidden_nodes], weights2[hidden_nodes] = create_train_model(
-            hidden_nodes, num_iters, Xtrain, ytrain, loss_plot)
-        plt.plot(range(num_iters),
-                 loss_plot[hidden_nodes], label="nn: %d-%d-2" % (len(rfeatures),hidden_nodes))
+    for node in num_hidden_nodes:
+        weights1[node], weights2[node] = create_train_model(node, num_iters, Xtrain, ytrain, loss_plot)       
+        plt.plot(range(num_iters),loss_plot[node], label="nn: %d-%d-2" % (len(rfeatures), node))
 
     plt.xlabel('Iteration', fontsize=12)
     plt.ylabel('Loss', fontsize=12)

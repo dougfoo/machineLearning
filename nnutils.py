@@ -19,7 +19,7 @@ def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, loss_plot, step_
     y = tf.placeholder(shape=ytrain.shape, dtype=tf.float64, name='y')   # 120,3
 
     # Variables for two group of weights between the three layers of the network
-    np.random.seed(0)
+    # np.random.seed(rseed)   # depends if you want repeatability or not
     W1 = tf.Variable(np.random.rand(Xtrain.shape[1], hidden_nodes), dtype=tf.float64)  #4,n
     W2 = tf.Variable(np.random.rand(hidden_nodes, ytrain.shape[1]), dtype=tf.float64)  #n,3
 
@@ -52,6 +52,9 @@ def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, loss_plot, step_
             loss_plot[hidden_nodes].append(l)
             weights1 = sess.run(W1)
             weights2 = sess.run(W2)
+            if (i % 500 == 0):
+                print ('gd-nodes: %d, iteration %d, loss: %f'%(hidden_nodes,i,l))
+
 # TODO figure out how to get this summary logging working
 #            ll_summary = tf.summary.scalar('log_loss', l)
 #            file_writer.add_summary(ll_summary)
