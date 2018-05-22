@@ -23,7 +23,7 @@ def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, step_size=0.005)
     W2 = tf.Variable(np.random.rand(hidden_nodes, ytrain.shape[1]), dtype=tf.float64)  #n,3
 
     # Create the neural net graph
-    with tf.name_scope("input"):
+    with tf.name_scope("fwdeval"):
         A1 = tf.sigmoid(tf.matmul(X, W1))
         y_est = tf.sigmoid(tf.matmul(A1, W2))
 
@@ -32,14 +32,14 @@ def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, step_size=0.005)
         deltas = tf.square(y_est - y)
         loss = tf.reduce_sum(deltas)
 
-    # Define a train operation to minimize the loss
+    # Define a train operation to minimize the loss (this is bit opaque)
     with tf.name_scope("train"):
         optimizer = tf.train.GradientDescentOptimizer(step_size)
-        train = optimizer.minimize(loss)
+        train = optimizer.minimize(loss) 
 
     # Initialize variables and run session
-    init = tf.global_variables_initializer()
     file_writer = tf.summary.FileWriter(getLogDir(), tf.get_default_graph())
+    init = tf.global_variables_initializer()
 
     with tf.Session() as sess:
         sess.run(init)
@@ -47,19 +47,17 @@ def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, step_size=0.005)
         # Go through num_iters iterations
         for i in range(num_iters):
             _,l = sess.run([train,loss], feed_dict={X: Xtrain, y: ytrain})
-            #l = sess.run(loss, feed_dict={X: Xtrain, y: ytrain})
             weights1 = sess.run(W1)
             weights2 = sess.run(W2)
             if (i % 200 == 0):
                 print ('gd-nodes: %d, iteration %d, loss: %f'%(hidden_nodes,i,l))
-                lsum=tf.summary.scalar('log_loss', l)
-                w1=tf.summary.histogram('weights1', weights1)   # strange graph result
-                w2=tf.summary.histogram('weights2', weights2)   # strange graph result
-                #merged = tf.summary.merge_all()
-                #summary = sess.run(merged)
-                file_writer.add_summary(lsum.eval())
+                tf.summary.scalar('log_loss', l)
+                tf.summary.histogram('weights1', weights1)   # strange graph result
+                tf.summary.histogram('weights2', weights2)   # strange graph result
+                merged = tf.summary.merge_all()                
+                file_writer.add_summary(sess.run(merged), i)
 
-        print("loss (hidden nodes: %d, iterations: %d): %.2f" % (hidden_nodes, num_iters, 0.333))
+        print("loss (hidden nodes: %d, iterations: %d): %.2f" % (hidden_nodes, num_iters,l))
         file_writer.close()
         sess.close()
 
