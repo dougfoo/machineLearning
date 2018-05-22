@@ -76,11 +76,6 @@ def test_gaga_tensor():
     theta = tf.Variable(tf.constant(guesses), name='theta')
     y_pred = tf.sigmoid(tf.matmul(X, theta, name='predictions'))
 
-    print ('-------xxx')
-    print (X)
-    print(y)
-    print ('-------xxx')
-
     with tf.name_scope("loss"):
         error = y_pred - y  # vs ll ?
         ll = tf.reduce_mean(tf.losses.log_loss(y,y_pred), name='log_loss')  # -log(x) or -log(1-x) ....
@@ -121,86 +116,20 @@ def test_gaga_tensor():
 
     return best_theta
 
-def test_gaga_nn_tensor():
-    tf.enable_eager_execution()
-    tf.reset_default_graph()
-    X,y,features,rfeatures,testMatrix,testY = getGagaTfFormat()
-
-    # boilerplate NN
-    n_epocs = 10  #40
-    batch_size = 50
-    learning_rate = 0.01
- 
-    ## NN setup phase
-#    n_inputs = 2000  # features/words
-    n_hidden1 = 200
-    n_outputs = 2
-
-    print ('-------')
-    print ('X',X)
-    print('y.shape',y.shape)
-    
-    print ('-------')
-
-    with tf.name_scope("dnn"):
-        hidden1 = neuron_layer_eager(X, n_hidden1, "hidden1", activation=tf.nn.relu)
-        logits = neuron_layer_eager(hidden1, n_outputs, "outputs", )
-        print ('logits',logits.shape)
-
-    with tf.name_scope("loss"):
-        xentropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y, logits=logits)  #bug
-        loss = tf.reduce_mean(xentropy, name="loss")
-        print ('loss',loss)
-
-    with tf.name_scope("train"):
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        training_op = optimizer.minimize(loss)
-        print('training_op',training_op)
-
-    with tf.name_scope("eval"):
-        correct = tf.nn.in_top_k(logits, y, 1)
-        accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
-        print('eval',accuracy)
-
-    ## exec run phase
-    print ('exec run')
-    init = tf.global_variables_initializer()
-    file_writer = tf.summary.FileWriter(getLogDir(),tf.get_default_graph())
-    saver = tf.train.Saver()
-
-    with tf.Session() as sess:
-        init.run()
-        for epoc in range(n_epocs):
-            sess.run(training_op)  
-            acc_train = accuracy.eval()
-            print (epoc, "train accuracy:", acc_train)
-        save_path = saver.save(sess, "./tf_logs/my_model_final.ckpt")
-#    file_writer.add_summary(summary_str, step)
-    file_writer.close()
-    # not workign
-
 def test_gaga_nn2_tensor():
     tf.reset_default_graph()
 
-    Xtrain, ytrain, rfeatures, Xtest, ytest = getGagaTfFormat2()
-
-    # Plot the loss function over iterations
-    num_hidden_nodes = [5, 10, 20, 30, 50]
-    loss_plot = {5: [], 10: [], 20: [], 30: [], 50: []}
+    num_hidden_nodes = [10]
     weights1 = {5: None, 10: None, 20: None, 30: None, 50: None}
     weights2 = {5: None, 10: None, 20: None, 30: None, 50: None}
-    num_iters = 5000
+    num_iters = 1500
 
-    plt.figure(figsize=(12, 8))
+    ### configure and train ###
+    Xtrain, ytrain, rfeatures, Xtest, ytest = getGagaTfFormat2()
     for node in num_hidden_nodes:
-        weights1[node], weights2[node] = create_train_model(node, num_iters, Xtrain, ytrain, loss_plot)       
-        plt.plot(range(num_iters),loss_plot[node], label="nn: %d-%d-2" % (len(rfeatures), node))
-
-    plt.xlabel('Iteration', fontsize=12)
-    plt.ylabel('Loss', fontsize=12)
-    plt.legend(fontsize=12)
-
-    # Evaluate models on the test set (7 test examples, 500 features, 2 outputs)
+        weights1[node], weights2[node] = create_train_model(node, num_iters, Xtrain, ytrain)       
+ 
+    ### Evaluate test set (30% test examples, 500 features, 2 outputs) ###
     X = tf.placeholder(shape=(len(ytest), len(rfeatures)), dtype=tf.float64, name='X')
     y = tf.placeholder(shape=(len(ytest), 2), dtype=tf.float64, name='y')
 
@@ -222,10 +151,9 @@ def test_gaga_nn2_tensor():
                    for estimate, target in zip(y_est_np, ytest.as_matrix())]
         accuracy = 100 * sum(correct) / len(correct)
         print('Network architecture %d-%d-2, accuracy: %.2f%%' % (len(rfeatures), hidden_nodes, accuracy))
-#    plt.show()
 
 if __name__ == "__main__":
     log.getLogger().setLevel(log.INFO)
-    # test_gaga_tensor()
+  #  test_gaga_tensor()
     test_gaga_nn2_tensor()
 

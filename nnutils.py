@@ -10,8 +10,7 @@ def encode(series):
   return pd.get_dummies(series.astype(str)) # ?
 
 # adapted build layers, credit:  # from http://stackabuse.com/tensorflow-neural-network-tutorial/
-def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, loss_plot, step_size=0.005):
-    # Reset the graph
+def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, step_size=0.005):
     tf.reset_default_graph()
 
     # Placeholders for input and output data
@@ -47,22 +46,22 @@ def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, loss_plot, step_
 
         # Go through num_iters iterations
         for i in range(num_iters):
-            sess.run(train, feed_dict={X: Xtrain, y: ytrain})
-            l = sess.run(loss, feed_dict={X: Xtrain, y: ytrain})
-            loss_plot[hidden_nodes].append(l)
+            _,l = sess.run([train,loss], feed_dict={X: Xtrain, y: ytrain})
+            #l = sess.run(loss, feed_dict={X: Xtrain, y: ytrain})
             weights1 = sess.run(W1)
             weights2 = sess.run(W2)
-            if (i % 500 == 0):
+            if (i % 200 == 0):
                 print ('gd-nodes: %d, iteration %d, loss: %f'%(hidden_nodes,i,l))
+                lsum=tf.summary.scalar('log_loss', l)
+                w1=tf.summary.histogram('weights1', weights1)   # strange graph result
+                w2=tf.summary.histogram('weights2', weights2)   # strange graph result
+                #merged = tf.summary.merge_all()
+                #summary = sess.run(merged)
+                file_writer.add_summary(lsum.eval())
 
-# TODO figure out how to get this summary logging working
-#            ll_summary = tf.summary.scalar('log_loss', l)
-#            file_writer.add_summary(ll_summary)
-
-        print("loss (hidden nodes: %d, iterations: %d): %.2f" % (hidden_nodes, num_iters, loss_plot[hidden_nodes][-1]))
+        print("loss (hidden nodes: %d, iterations: %d): %.2f" % (hidden_nodes, num_iters, 0.333))
         file_writer.close()
         sess.close()
-
 
     return weights1, weights2
 
