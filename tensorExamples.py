@@ -1,16 +1,16 @@
-import requests, pandas, io, numpy, argparse, math
+import requests, pandas, io, numpy, argparse, math, inspect
 import numpy as np
-from nnutils import *
+import matplotlib.pyplot as plt
 import featureEngineering as fe
+import logging as log
+import tensorflow as tf
+from nnutils import *
 from myutils import *
 from mpmath import *
 from gdsolvers import *
-import logging as log
-import inspect
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 from sklearn.utils import shuffle
-import tensorflow as tf
 
 def test_basic_tensor():
     x = tf.Variable(3, name='x')
@@ -177,7 +177,7 @@ def test_logreg_tensor():
         for epoch in range(n_epochs):
             if (epoch % 25 == 0):
                 print('Epoch %s Log_Loss %s'%(epoch, ll.eval()))
-                summary_str = ll_summary.eval()  # bug
+                summary_str = ll_summary.eval()  
                 step = epoch
                 file_writer.add_summary(summary_str, step)
             sess.run(training_op)   # whats an opp
@@ -185,7 +185,6 @@ def test_logreg_tensor():
     print(best_theta)
     file_writer.close()
     return best_theta
-
 
 def test_nn_tensor():
     tf.reset_default_graph()
@@ -247,53 +246,10 @@ def test_nn_tensor():
 #    file_writer.add_summary(summary_str, step)
     file_writer.close()
 
-# generic test case
+# neural network
+# from http://stackabuse.com/tensorflow-neural-network-tutorial/
 def test_nn2_tensor():
     tf.reset_default_graph()
-    n_epocs = 10  #40
-    learning_rate = 0.05
-    n_hidden1 = 2
-    n_outputs = 1
-
-    xs = np.array([[10,1],[11,2],[1,6]])
-    ys = np.array([0.9,0,0])  # odd can't use 1.0
-    X = tf.constant(xs, dtype=tf.float32, name='X')
-    y = tf.constant(ys, dtype=tf.int32, name='y')
-
-    with tf.name_scope("dnn"):
-        hidden1 = neuron_layer(X, n_hidden1, "hidden1", activation=tf.nn.relu)
-        logits = neuron_layer(hidden1, n_outputs, "outputs", )
-
-    with tf.name_scope("loss"):
-        xentropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y, logits=logits)
-        loss = tf.reduce_mean(xentropy, name="loss")
-
-    with tf.name_scope("train"):
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        training_op = optimizer.minimize(loss)
-
-    with tf.name_scope("eval"):
-        correct = tf.nn.in_top_k(logits, y, 1)
-        accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
-
-    ## exec run phase
-    init = tf.global_variables_initializer()
-    file_writer = tf.summary.FileWriter(getLogDir(),tf.get_default_graph())
-    saver = tf.train.Saver()
-
-    with tf.Session() as sess:
-        init.run()
-        for epoc in range(n_epocs):
-            sess.run(training_op)
-            print(epoc, "loss:", loss.eval(), "acc", accuracy.eval())
-        save_path = saver.save(sess, "./tf_logs/my_model_final.ckpt")
-    file_writer.close()
-
-def test_nn3_tensor():
-    tf.reset_default_graph()
-
-    import urllib.request as request
-    import matplotlib.pyplot as plt
 
     # Download dataset
     IRIS_TRAIN_URL = "http://download.tensorflow.org/data/iris_training.csv"
@@ -315,22 +271,45 @@ def test_nn3_tensor():
     print (Xtrain.shape, type(Xtrain))
     print (ytrain.shape, type(ytrain))
 
-
     # Plot the loss function over iterations
     num_hidden_nodes = [5, 10, 20]
     loss_plot = {5: [], 10: [], 20: []}
     weights1 = {5: None, 10: None, 20: None}
     weights2 = {5: None, 10: None, 20: None}
-    num_iters = 200
+    num_iters = 500
 
     plt.figure(figsize=(12,8))  
     for hidden_nodes in num_hidden_nodes:  
-        weights1[hidden_nodes], weights2[hidden_nodes] = create_train_model(hidden_nodes, num_iters, Xtrain, ytrain)
+        weights1[hidden_nodes], weights2[hidden_nodes] = create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, loss_plot)
         plt.plot(range(num_iters), loss_plot[hidden_nodes], label="nn: 4-%d-3" % hidden_nodes)
 
     plt.xlabel('Iteration', fontsize=12)  
     plt.ylabel('Loss', fontsize=12)  
     plt.legend(fontsize=12)  
+
+    # Evaluate models on the test set
+    X = tf.placeholder(shape=(30, 4), dtype=tf.float64, name='X')
+    y = tf.placeholder(shape=(30, 3), dtype=tf.float64, name='y')
+
+    for hidden_nodes in num_hidden_nodes:
+        # Forward propagation
+        W1 = tf.Variable(weights1[hidden_nodes])
+        W2 = tf.Variable(weights2[hidden_nodes])
+        A1 = tf.sigmoid(tf.matmul(X, W1))
+        y_est = tf.sigmoid(tf.matmul(A1, W2))
+
+        # Calculate the predicted outputs
+        init = tf.global_variables_initializer()
+        with tf.Session() as sess:
+            sess.run(init)
+            y_est_np = sess.run(y_est, feed_dict={X: Xtest, y: ytest})
+
+        # Calculate the prediction accuracy
+        correct = [estimate.argmax(axis=0) == target.argmax(axis=0) 
+            for estimate, target in zip(y_est_np, ytest.as_matrix())]
+        accuracy = 100 * sum(correct) / len(correct)
+        print('Network architecture 4-%d-3, accuracy: %.2f%%' % (hidden_nodes, accuracy))
+#    plt.show()
 
 
 if __name__ == "__main__":
@@ -344,6 +323,5 @@ if __name__ == "__main__":
     # test_mod_tensor()
     # test_logreg_tensor()
     # test_nn_tensor()
-    # test_nn2_tensor()
-    test_nn3_tensor()
+    test_nn2_tensor()
 

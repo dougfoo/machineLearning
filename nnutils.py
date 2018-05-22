@@ -3,54 +3,67 @@ import numpy as np
 import pandas as pd
 import urllib.request as request
 import matplotlib.pyplot as plt
+from myutils import *
 
 # 1 hot encode a series
 def encode(series):
   return pd.get_dummies(series.astype(str)) # ?
 
-
-def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain):
+# adapted build layers, credit:  # from http://stackabuse.com/tensorflow-neural-network-tutorial/
+def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, loss_plot, step_size=0.005):
     # Reset the graph
     tf.reset_default_graph()
 
     # Placeholders for input and output data
-    X = tf.placeholder(shape=(120, 4), dtype=tf.float64, name='X')
-    y = tf.placeholder(shape=(120, 3), dtype=tf.float64, name='y')
+    X = tf.placeholder(shape=Xtrain.shape, dtype=tf.float64, name='X')   # 120,4
+    y = tf.placeholder(shape=ytrain.shape, dtype=tf.float64, name='y')   # 120,3
 
     # Variables for two group of weights between the three layers of the network
-    W1 = tf.Variable(np.random.rand(4, hidden_nodes), dtype=tf.float64)
-    W2 = tf.Variable(np.random.rand(hidden_nodes, 3), dtype=tf.float64)
+    np.random.seed(0)
+    W1 = tf.Variable(np.random.rand(Xtrain.shape[1], hidden_nodes), dtype=tf.float64)  #4,n
+    W2 = tf.Variable(np.random.rand(hidden_nodes, ytrain.shape[1]), dtype=tf.float64)  #n,3
 
     # Create the neural net graph
-    A1 = tf.sigmoid(tf.matmul(X, W1))
-    y_est = tf.sigmoid(tf.matmul(A1, W2))
+    with tf.name_scope("input"):
+        A1 = tf.sigmoid(tf.matmul(X, W1))
+        y_est = tf.sigmoid(tf.matmul(A1, W2))
 
     # Define a loss function
-    deltas = tf.square(y_est - y)
-    loss = tf.reduce_sum(deltas)
+    with tf.name_scope("lossf"):
+        deltas = tf.square(y_est - y)
+        loss = tf.reduce_sum(deltas)
 
     # Define a train operation to minimize the loss
-    optimizer = tf.train.GradientDescentOptimizer(0.005)
-    train = optimizer.minimize(loss)
+    with tf.name_scope("train"):
+        optimizer = tf.train.GradientDescentOptimizer(step_size)
+        train = optimizer.minimize(loss)
 
     # Initialize variables and run session
     init = tf.global_variables_initializer()
-    sess = tf.Session()
-    sess.run(init)
+    file_writer = tf.summary.FileWriter(getLogDir(), tf.get_default_graph())
 
-    loss_plot = []
-    # Go through num_iters iterations
-    for i in range(num_iters):
-        sess.run(train, feed_dict={X: Xtrain, y: ytrain})
-        loss_plot[hidden_nodes].append(sess.run(loss, feed_dict={X: Xtrain, y: ytrain}))
-        weights1 = sess.run(W1)
-        weights2 = sess.run(W2)
+    with tf.Session() as sess:
+        sess.run(init)
 
-    print("loss (hidden nodes: %d, iterations: %d): %.2f" % (hidden_nodes, num_iters, loss_plot[hidden_nodes][-1]))
-    sess.close()
+        # Go through num_iters iterations
+        for i in range(num_iters):
+            sess.run(train, feed_dict={X: Xtrain, y: ytrain})
+            l = sess.run(loss, feed_dict={X: Xtrain, y: ytrain})
+            loss_plot[hidden_nodes].append(l)
+            weights1 = sess.run(W1)
+            weights2 = sess.run(W2)
+# TODO figure out how to get this summary logging working
+#            ll_summary = tf.summary.scalar('log_loss', l)
+#            file_writer.add_summary(ll_summary)
+
+        print("loss (hidden nodes: %d, iterations: %d): %.2f" % (hidden_nodes, num_iters, loss_plot[hidden_nodes][-1]))
+        file_writer.close()
+        sess.close()
+
+
     return weights1, weights2
 
-# X is MxN
+# alt layer builder
 def neuron_layer(X, n_neurons, name, activation=None):
     with tf.name_scope(name):
         n_inputs = int(X.get_shape()[1])  # 1 or 0 - training rows
@@ -64,6 +77,7 @@ def neuron_layer(X, n_neurons, name, activation=None):
         else:
                 return Z
 
+# alt eager eval builder
 def neuron_layer_eager(X, n_neurons, name, activation=None):
     with tf.name_scope(name):
         n_inputs = int(X.get_shape()[1])  # 1 or 0 - training rows

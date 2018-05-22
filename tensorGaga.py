@@ -13,8 +13,8 @@ from sklearn.utils import shuffle
 import tensorflow as tf
 
 
-def getGagaTfFormat():
-    xMatrix,yArr,features,fnames = fe.getGagaData(maxrows=500,stopwords='english')
+def getGagaTfFormat(maxrows=500):
+    xMatrix,yArr,features,fnames = fe.getGagaData(maxrows,stopwords='english')
     xMatrix = shuffle(xMatrix, random_state=0)   
     yArr = shuffle(yArr, random_state=0) 
 
@@ -29,19 +29,40 @@ def getGagaTfFormat():
     from logisticRegression import reduceFeatures
     X,rfeatures = reduceFeatures(X, Y, features, 500)
 
-    # convert to TensorFlow formats
     xs = X
     ys = np.array(Y).reshape(-1,1)  #col orient
-    ys = pd.get_dummies(Y)
-    print (ys.shape)
-#    ys = ys.flatten()
-#    ys = np.array(Y).reshape(1,-1)  #col orient
-#    np.random.seed(42)
-#    guesses = np.random.rand(1,len(xs)).astype('float32') 
+
     X = tf.constant(xs, dtype=tf.float32, name='X')
     y = tf.constant(ys, dtype=tf.float32, name='y')
 
-    return X,y, features, rfeatures, testMatrix, testY
+    return X,y, features, rfeatures, testMatrix, testY  # testM/testY arne't in TF formats
+
+
+def getGagaTfFormat2(maxrows=500):
+    xMatrix,yArr,features,fnames = fe.getGagaData(maxrows,stopwords='english')
+    xMatrix = shuffle(xMatrix, random_state=0)   
+    yArr = shuffle(yArr, random_state=0) 
+
+    partition = int(.70*len(yArr))
+    trainingX = xMatrix[:partition]
+    trainingY = yArr[:partition]
+    testX = xMatrix[partition:]
+    testY = yArr[partition:]
+
+    trainingX = np.array(trainingX)
+    from logisticRegression import reduceFeatures
+    trainingX, rfeatures = reduceFeatures(trainingX, trainingY, features, 500)
+
+    # reduce testSet to same features
+    df = pandas.DataFrame(testX, columns=features)
+    testX = df[rfeatures].as_matrix()
+
+    # convert to TensorFlow formats
+    trainingY = pd.get_dummies(trainingY)
+    testY = pd.get_dummies(testY)
+
+    return trainingX, trainingY, features, rfeatures, testX, testY
+
 
 def test_gaga_tensor():
     tf.reset_default_graph()
@@ -156,10 +177,57 @@ def test_gaga_nn_tensor():
         save_path = saver.save(sess, "./tf_logs/my_model_final.ckpt")
 #    file_writer.add_summary(summary_str, step)
     file_writer.close()
+    # not workign
 
+def test_gaga_nn2_tensor():
+    tf.reset_default_graph()
+
+    Xtrain, ytrain, features, rfeatures, Xtest, ytest = getGagaTfFormat2()
+
+    # Plot the loss function over iterations
+    num_hidden_nodes = [5, 10, 20, 50, 100]
+    loss_plot = {5: [], 10: [], 20: [], 50: [], 100: []}
+    weights1 = {5: None, 10: None, 20: None, 50: None, 100: None}
+    weights2 = {5: None, 10: None, 20: None, 50: None, 100: None}
+    num_iters = 2000
+
+    plt.figure(figsize=(12, 8))
+    for hidden_nodes in num_hidden_nodes:
+        weights1[hidden_nodes], weights2[hidden_nodes] = create_train_model(
+            hidden_nodes, num_iters, Xtrain, ytrain, loss_plot)
+        plt.plot(range(num_iters),
+                 loss_plot[hidden_nodes], label="nn: %d-%d-2" % (len(rfeatures),hidden_nodes))
+
+    plt.xlabel('Iteration', fontsize=12)
+    plt.ylabel('Loss', fontsize=12)
+    plt.legend(fontsize=12)
+
+    # Evaluate models on the test set (7 test examples, 500 features, 2 outputs)
+    X = tf.placeholder(shape=(len(ytest), len(rfeatures)), dtype=tf.float64, name='X')
+    y = tf.placeholder(shape=(len(ytest), 2), dtype=tf.float64, name='y')
+
+    for hidden_nodes in num_hidden_nodes:
+        # Forward propagation
+        W1 = tf.Variable(weights1[hidden_nodes])
+        W2 = tf.Variable(weights2[hidden_nodes])
+        A1 = tf.sigmoid(tf.matmul(X, W1))
+        y_est = tf.sigmoid(tf.matmul(A1, W2))
+
+        # Calculate the predicted outputs
+        init = tf.global_variables_initializer()
+        with tf.Session() as sess:
+            sess.run(init)
+            y_est_np = sess.run(y_est, feed_dict={X: Xtest, y: ytest})
+
+        # Calculate the prediction accuracy
+        correct = [estimate.argmax(axis=0) == target.argmax(axis=0)
+                   for estimate, target in zip(y_est_np, ytest.as_matrix())]
+        accuracy = 100 * sum(correct) / len(correct)
+        print('Network architecture %d-%d-2, accuracy: %.2f%%' % (len(rfeatures), hidden_nodes, accuracy))
+#    plt.show()
 
 if __name__ == "__main__":
     log.getLogger().setLevel(log.INFO)
     # test_gaga_tensor()
-    test_gaga_nn_tensor()
+    test_gaga_nn2_tensor()
 
