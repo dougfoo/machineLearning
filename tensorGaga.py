@@ -157,47 +157,33 @@ def test_gaga_nn3_tensor():
     def load_directory_data(directory):
         data = {}
         data["sentence"] = []
-        data["sentiment"] = []
+        data["file"] = []
         for file_path in os.listdir(directory):
             with tf.gfile.GFile(os.path.join(directory, file_path), "r") as f:
                 data["sentence"].append(f.read())
-                data["sentiment"].append(re.match("\d+_(\d+)\.txt", file_path).group(1))
+                data["file"].append(str(file_path))
         return pd.DataFrame.from_dict(data)
 
     # Merge positive and negative examples, add a polarity column and shuffle.
     def load_dataset(directory):
-        pos_df = load_directory_data(os.path.join(directory, "pos"))
-        neg_df = load_directory_data(os.path.join(directory, "neg"))
+        pos_df = load_directory_data(os.path.join(directory, "gaga"))
+        neg_df = load_directory_data(os.path.join(directory, "clash"))
         pos_df["polarity"] = 1
         neg_df["polarity"] = 0
         return pd.concat([pos_df, neg_df]).sample(frac=1).reset_index(drop=True)
 
     # Download and process the dataset files.
-    def download_and_load_datasets(force_download=False):
-        dataset = tf.keras.utils.get_file(
-            fname="aclImdb.tar.gz",
-            origin="http://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz",
-            extract=True)
-
-        train_df = load_dataset(os.path.join(os.path.dirname(dataset), "aclImdb", "train"))
-        test_df = load_dataset(os.path.join(os.path.dirname(dataset),  "aclImdb", "test"))
+    def download_and_load_datasets():
+        df = load_dataset("songclass/lyrics/")
+        df = df.sample(frac=1)
+        train_df = df[:250]  # arb cut 70%
+        test_df = df[250:] 
         return train_df, test_df
 
     tf.reset_default_graph()
 
-    ### configure and train ###
-    Xtrain, ytrain, rfeatures, Xtest, ytest = getGagaTfFormat2()
-
-    ### Evaluate test set (30% test examples, 500 features, 2 outputs) ###
-    X = tf.placeholder(shape=(len(ytest), len(rfeatures)), dtype=tf.float64, name='X')
-    y = tf.placeholder(shape=(len(ytest), 2), dtype=tf.float64, name='y')
-
-    ## input format
-    ##   ["polarity"] == 0 or 1 answer
-    ##   ["sentence"] == full text of song !
-    ## thats it!!
-    train_df = pandas.DataFrame()
-    test_df = pandas.DataFrame()    
+    train_df, test_df = download_and_load_datasets()
+    print(train_df.head())
 
     # Training input on the whole training set with no limit on training epochs.
     train_input_fn = tf.estimator.inputs.pandas_input_fn(train_df, train_df["polarity"], num_epochs=None, shuffle=True)
@@ -207,6 +193,7 @@ def test_gaga_nn3_tensor():
     predict_test_input_fn = tf.estimator.inputs.pandas_input_fn(test_df, test_df["polarity"], shuffle=False)
 
     # hmm not sure we need this?
+    import tensorflow_hub as hub
     embedded_text_feature_column = hub.text_embedding_column(
         key="sentence",    ## use sentence column instead of vectorizing ??
         module_spec="https://tfhub.dev/google/nnlm-en-dim128/1")
@@ -214,10 +201,17 @@ def test_gaga_nn3_tensor():
     estimator = tf.estimator.DNNClassifier(
         hidden_units=[500, 100],
         feature_columns=[embedded_text_feature_column],
+        model_dir="tf_logs/",
         n_classes=2,
         optimizer=tf.train.AdagradOptimizer(learning_rate=0.003))
 
     estimator.train(input_fn=train_input_fn, steps=1000)
+
+    train_eval_result = estimator.evaluate(input_fn=predict_train_input_fn)
+    test_eval_result = estimator.evaluate(input_fn=predict_test_input_fn)
+    
+    file_writer = tf.summary.FileWriter(getLogDir(),tf.get_default_graph())
+    file_writer.close()
 
     print ("Training set accuracy: {accuracy}".format(**train_eval_result))
     print ("Test set accuracy: {accuracy}".format(**test_eval_result))
@@ -238,6 +232,7 @@ if __name__ == "__main__":
     log.getLogger().setLevel(log.INFO)
     # test_gaga_tensor()
     # test_gaga_nn2_tensor()test_gaga
-    test_gaga_nn2_tensor()
-    test_gaga_dnn_tensor()
+#    test_gaga_nn2_tensor()
+    test_gaga_nn3_tensor()
+#    test_gaga_dnn_tensor()
 
