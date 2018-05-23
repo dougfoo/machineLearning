@@ -119,7 +119,7 @@ def test_gaga_tensor():
 def test_gaga_nn2_tensor():
     tf.reset_default_graph()
 
-    num_hidden_nodes = [10]
+    num_hidden_nodes = [10,20]  # must be included in weight1/weight2 grid below
     weights1 = {5: None, 10: None, 20: None, 30: None, 50: None}
     weights2 = {5: None, 10: None, 20: None, 30: None, 50: None}
     num_iters = 1500

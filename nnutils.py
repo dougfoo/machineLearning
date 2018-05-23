@@ -9,6 +9,18 @@ from myutils import *
 def encode(series):
   return pd.get_dummies(series.astype(str)) # ?
 
+# for plotting weight summaries
+def tf_var_summaries(var):
+    with tf.name_scope('summaries'):
+        mean = tf.reduce_mean(var)
+        tf.summary.scalar('mean', mean)
+        with tf.name_scope('stddev'):
+            stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+        tf.summary.scalar('stddev', stddev)
+        tf.summary.scalar('max', tf.reduce_max(var))
+        tf.summary.scalar('min', tf.reduce_min(var))
+        tf.summary.histogram('histogram', var)
+
 # adapted build layers, credit:  # from http://stackabuse.com/tensorflow-neural-network-tutorial/
 def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, step_size=0.005):
     tf.reset_default_graph()
@@ -23,14 +35,14 @@ def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, step_size=0.005)
     with tf.name_scope("Weights"):
         W1 = tf.Variable(np.random.rand(Xtrain.shape[1], hidden_nodes), dtype=tf.float64, name='W1')  #4,n
         W2 = tf.Variable(np.random.rand(hidden_nodes, ytrain.shape[1]), dtype=tf.float64, name='W2')  #n,3
-        tf.summary.histogram('weights1', W1)   
-        tf.summary.histogram('weights2', W2)   
+        tf_var_summaries(W1)
+        tf_var_summaries(W2)
 
     # Create the neural net graph
     with tf.name_scope("fwdeval"):
         A1 = tf.sigmoid(tf.matmul(X, W1))
         y_est = tf.sigmoid(tf.matmul(A1, W2))
-        tf.summary.histogram('y_est', y_est)   
+        tf_var_summaries(y_est)
 
     # Define a loss function
     with tf.name_scope("lossf"):
@@ -55,7 +67,7 @@ def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, step_size=0.005)
             if (i % 200 == 0):
                 print ('gd-nodes: %d, iteration %d, loss: %f'%(hidden_nodes,i,l))
                 merged = tf.summary.merge_all() 
-                summary=sess.run(merged, feed_dict={X: Xtrain, y: ytrain})
+                summary = sess.run(merged, feed_dict={X: Xtrain, y: ytrain})
                 file_writer.add_summary(summary, i)
         print("loss (hidden nodes: %d, iterations: %d): %.2f" % (hidden_nodes, num_iters, l))
         file_writer.close()
