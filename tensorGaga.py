@@ -93,10 +93,10 @@ def test_gaga_tensor():
         for epoch in range(n_epochs):
             if (epoch % 25 == 0):
                 print('Epoch %s Log_Loss %s'%(epoch, ll.eval()))
-                summary_str = ll_summary.eval()  # bug
+                summary_str = ll_summary.eval()  
                 step = epoch
                 file_writer.add_summary(summary_str, step)
-            sess.run(training_op)   # whats an opp
+            sess.run(training_op)   
         best_theta = theta.eval()
     print(gf(best_theta))   # scores should be similar to sckit and grad5 solver
     file_writer.close()
@@ -154,6 +154,6 @@ def test_gaga_nn2_tensor():
 
 if __name__ == "__main__":
     log.getLogger().setLevel(log.INFO)
-  #  test_gaga_tensor()
+   # test_gaga_tensor()
     test_gaga_nn2_tensor()
 

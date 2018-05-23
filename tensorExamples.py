@@ -55,6 +55,7 @@ def test_basic_tensor4():
     y = x + 5  # 10 
     z = y + 10 # 20
     with tf.Session():
+        log.info(type(y))
         log.info(y.eval())
         log.info(z.eval())
     # or in batch y,z = sess.run([y,z])
@@ -93,10 +94,8 @@ def test_grad_tensor_logging():
     scaled_housing_data_plus_bias = np.c_[np.ones((m, 1)), scaled_housing_data]
 
     y = tf.constant(housing.target.reshape(-1,1), dtype=tf.float32, name='y')
-#    X = tf.constant(housing_data_plus_bias, dtype=tf.float32, name='X')   #otherwise need super small learning rate
     X = tf.constant(scaled_housing_data_plus_bias, dtype=tf.float32, name="X")
 
-#    theta = tf.Variable(tf.random_uniform([n + 1, 1], -1.0, 1.0, seed=42), name="theta")
     theta = tf.Variable(tf.constant([[1.0],[1.0],[1.0],[1.0],[1.0],[1.0],[1.0],[1.0],[1.0]]), name='theta')
     y_pred = tf.matmul(X, theta, name='predictions')
 
@@ -317,11 +316,11 @@ if __name__ == "__main__":
     # test_basic_tensor()
     # test_basic_tensor2()
     # test_basic_tensor3()
-    # test_basic_tensor4()
+    test_basic_tensor4()
     # test_linreg_tensor()
     # test_grad_tensor_logging()
     # test_mod_tensor()
     # test_logreg_tensor()
     # test_nn_tensor()
-    test_nn2_tensor()
+    # test_nn2_tensor()
 
