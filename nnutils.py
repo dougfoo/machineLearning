@@ -9,28 +9,46 @@ from myutils import *
 def encode(series):
   return pd.get_dummies(series.astype(str)) # ?
 
+# for plotting weight summaries
+def tf_var_summaries(var):
+    with tf.name_scope('summaries'):
+        mean = tf.reduce_mean(var)
+        tf.summary.scalar('mean', mean)
+        with tf.name_scope('stddev'):
+            stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+        tf.summary.scalar('stddev', stddev)
+        tf.summary.scalar('max', tf.reduce_max(var))
+        tf.summary.scalar('min', tf.reduce_min(var))
+        tf.summary.histogram('histogram', var)
+
 # adapted build layers, credit:  # from http://stackabuse.com/tensorflow-neural-network-tutorial/
 def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, step_size=0.005):
     tf.reset_default_graph()
 
     # Placeholders for input and output data
-    X = tf.placeholder(shape=Xtrain.shape, dtype=tf.float64, name='X')   # 120,4
-    y = tf.placeholder(shape=ytrain.shape, dtype=tf.float64, name='y')   # 120,3
+    with tf.name_scope("InputsXY"):
+        X = tf.placeholder(shape=Xtrain.shape, dtype=tf.float64, name='X')   # 120,4
+        y = tf.placeholder(shape=ytrain.shape, dtype=tf.float64, name='y')   # 120,3
 
     # Variables for two group of weights between the three layers of the network
     # np.random.seed(rseed)   # depends if you want repeatability or not
-    W1 = tf.Variable(np.random.rand(Xtrain.shape[1], hidden_nodes), dtype=tf.float64)  #4,n
-    W2 = tf.Variable(np.random.rand(hidden_nodes, ytrain.shape[1]), dtype=tf.float64)  #n,3
+    with tf.name_scope("Weights"):
+        W1 = tf.Variable(np.random.rand(Xtrain.shape[1], hidden_nodes), dtype=tf.float64, name='W1')  #4,n
+        W2 = tf.Variable(np.random.rand(hidden_nodes, ytrain.shape[1]), dtype=tf.float64, name='W2')  #n,3
+        tf_var_summaries(W1)
+        tf_var_summaries(W2)
 
     # Create the neural net graph
     with tf.name_scope("fwdeval"):
         A1 = tf.sigmoid(tf.matmul(X, W1))
         y_est = tf.sigmoid(tf.matmul(A1, W2))
+        tf_var_summaries(y_est)
 
     # Define a loss function
     with tf.name_scope("lossf"):
         deltas = tf.square(y_est - y)
         loss = tf.reduce_sum(deltas)
+        tf.summary.scalar('log_loss', loss)       # logs are coming wrong log_loss[_1....n]
 
     # Define a train operation to minimize the loss (this is bit opaque)
     with tf.name_scope("train"):
@@ -44,24 +62,18 @@ def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, step_size=0.005)
     with tf.Session() as sess:
         sess.run(init)
 
-        # Go through num_iters iterations
         for i in range(num_iters):
-            _,l = sess.run([train,loss], feed_dict={X: Xtrain, y: ytrain})
-            weights1 = sess.run(W1)
-            weights2 = sess.run(W2)
+            _,l,w1,w2 = sess.run([train,loss,W1,W2], feed_dict={X: Xtrain, y: ytrain})
             if (i % 200 == 0):
                 print ('gd-nodes: %d, iteration %d, loss: %f'%(hidden_nodes,i,l))
-                tf.summary.scalar('log_loss', l)
-                tf.summary.histogram('weights1', weights1)   # strange graph result
-                tf.summary.histogram('weights2', weights2)   # strange graph result
-                merged = tf.summary.merge_all()                
-                file_writer.add_summary(sess.run(merged), i)
-
-        print("loss (hidden nodes: %d, iterations: %d): %.2f" % (hidden_nodes, num_iters,l))
+                merged = tf.summary.merge_all() 
+                summary = sess.run(merged, feed_dict={X: Xtrain, y: ytrain})
+                file_writer.add_summary(summary, i)
+        print("loss (hidden nodes: %d, iterations: %d): %.2f" % (hidden_nodes, num_iters, l))
         file_writer.close()
         sess.close()
 
-    return weights1, weights2
+    return w1, w2
 
 # alt layer builder
 def neuron_layer(X, n_neurons, name, activation=None):
