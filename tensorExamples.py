@@ -116,10 +116,10 @@ def test_grad_tensor_logging():
         for epoch in range(n_epochs):
             if (epoch % 25 == 0):
                 print('Epoch %s MSE %s'%(epoch, mse.eval()))
-                summary_str = mse_summary.eval()  # bug
+                summary_str = mse_summary.eval()  
                 step = epoch
                 file_writer.add_summary(summary_str, step)
-            sess.run(training_op)   # whats an opp
+            sess.run(training_op)   
         best_theta = theta.eval()
     print(best_theta)
     file_writer.close()
