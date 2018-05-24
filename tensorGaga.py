@@ -151,9 +151,9 @@ def test_gaga_nn2_tensor():
         accuracy = 100 * sum(correct) / len(correct)
         print('Network architecture %d-%d-2, accuracy: %.2f%%' % (len(rfeatures), hidden_nodes, accuracy))
 
-# alternative way to try lady gaga text classifier
-def test_gaga_nn3_tensor():
     # Load all files from a directory in a DataFrame.
+# Download and process the dataset files.
+def get_gaga_as_pandas_datasets():
     def load_directory_data(directory):
         data = {}
         data["sentence"] = []
@@ -164,51 +164,48 @@ def test_gaga_nn3_tensor():
                 data["file"].append(str(file_path))
         return pd.DataFrame.from_dict(data)
 
-    # Merge positive and negative examples, add a polarity column and shuffle.
+    # Merge positive and negative examples, add a gagaflag column and shuffle.
     def load_dataset(directory):
         pos_df = load_directory_data(os.path.join(directory, "gaga"))
         neg_df = load_directory_data(os.path.join(directory, "clash"))
-        pos_df["polarity"] = 1
-        neg_df["polarity"] = 0
+        pos_df["gagaflag"] = 1
+        neg_df["gagaflag"] = 0
         return pd.concat([pos_df, neg_df]).sample(frac=1).reset_index(drop=True)
-
-    # Download and process the dataset files.
-    def download_and_load_datasets():
-        df = load_dataset("songclass/lyrics/")
-        df = df.sample(frac=1)
-        train_df = df[:250]  # arb cut 70%
-        test_df = df[250:] 
-        return train_df, test_df
-
+        
+    df = load_dataset("songclass/lyrics/")
+    df = df.sample(frac=1)
+    train_df = df[:250]  # arb cut 70%
+    test_df = df[250:] 
+    return train_df, test_df    
+    
+# alternative way to try lady gaga text classifier
+def test_gaga_nn3_tensor():
     tf.reset_default_graph()
 
-    train_df, test_df = download_and_load_datasets()
+    train_df, test_df = get_gaga_as_pandas_datasets()
     print(train_df.head())
 
-    # Training input on the whole training set with no limit on training epochs.
-    train_input_fn = tf.estimator.inputs.pandas_input_fn(train_df, train_df["polarity"], num_epochs=None, shuffle=True)
-    # Prediction on the whole training set.
-    predict_train_input_fn = tf.estimator.inputs.pandas_input_fn(train_df, train_df["polarity"], shuffle=False)
-    # Prediction on the test set.
-    predict_test_input_fn = tf.estimator.inputs.pandas_input_fn(test_df, test_df["polarity"], shuffle=False)
+    # Training input on the whole training set with no limit on training epochs. (train)
+    # test w/ training data (verify).  test w/ test data (test)
+    train_input_fn = tf.estimator.inputs.pandas_input_fn(train_df, train_df["gagaflag"], num_epochs=None, shuffle=True)
+    predict_train_input_fn = tf.estimator.inputs.pandas_input_fn(train_df, train_df["gagaflag"], shuffle=False)
+    predict_test_input_fn = tf.estimator.inputs.pandas_input_fn(test_df, test_df["gagaflag"], shuffle=False)
 
-    # hmm not sure we need this?
+    # hmm not sure what this does exactly...
     import tensorflow_hub as hub
     embedded_text_feature_column = hub.text_embedding_column(
-        key="sentence",    ## use sentence column instead of vectorizing ??
-        module_spec="https://tfhub.dev/google/nnlm-en-dim128/1")
+        key="sentence", module_spec="https://tfhub.dev/google/nnlm-en-dim128/1")
 
     estimator = tf.estimator.DNNClassifier(
         hidden_units=[500, 100],
         feature_columns=[embedded_text_feature_column],
-        model_dir="tf_logs/",
-        n_classes=2,
+        model_dir="tf_logs/", n_classes=2,
         optimizer=tf.train.AdagradOptimizer(learning_rate=0.003))
 
     estimator.train(input_fn=train_input_fn, steps=1000)
 
-    train_eval_result = estimator.evaluate(input_fn=predict_train_input_fn)
-    test_eval_result = estimator.evaluate(input_fn=predict_test_input_fn)
+    train_eval_result = estimator.evaluate(input_fn=predict_train_input_fn)  # expect 1.0
+    test_eval_result = estimator.evaluate(input_fn=predict_test_input_fn)    # expect ~ .80
     
     file_writer = tf.summary.FileWriter(getLogDir(),tf.get_default_graph())
     file_writer.close()
