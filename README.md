@@ -3,7 +3,10 @@ Everything from 101 Linear and Logistic Regression, to Neural Networks on Google
 
 [Check out this blog post](https://medium.com/ai-society/gans-from-scratch-1-a-deep-introduction-with-code-in-pytorch-and-tensorflow-cb03cdcdba0f) for an introduction to Generative Networks. 
 
-[My notebooks](https://github.com/dougfoo/machineLearning/blob/master/notebooks/Intro.ipynb)
+[My notebooks](https://github.com/dougfoo/machineLearning/blob/master/notebooks/Intro.ipynb) (moved to wiki)
+
+[My wiki](https://github.com/dougfoo/machineLearning/wiki)
+
 
 ## Training Links
     https://en.wikipedia.org/wiki/Boltzmann_machine
