@@ -3,8 +3,7 @@ Everything from 101 Linear and Logistic Regression, to Neural Networks on Google
 
 [Check out this blog post](https://medium.com/ai-society/gans-from-scratch-1-a-deep-introduction-with-code-in-pytorch-and-tensorflow-cb03cdcdba0f) for an introduction to Generative Networks. 
 
-I may add various bookmarks here later
-
+[My notebooks](https://github.com/dougfoo/machineLearning/blob/master/Intro.ipynb)
 
 ## Vanilla GANs
 Vanilla GANs found in this project were developed based on the original paper [Generative Adversarial Networks](https://arxiv.org/abs/1406.2661) by Goodfellow et al.
