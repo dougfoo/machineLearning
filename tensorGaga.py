@@ -173,7 +173,7 @@ def get_gaga_as_pandas_datasets():
         return pd.concat([pos_df, neg_df]).sample(frac=1).reset_index(drop=True)
         
     df = load_dataset("songclass/lyrics/")
-    df = df.sample(frac=1)
+    df = df.sample(frac=1) # random shuffle and sample
     train_df = df[:250]  # arb cut 70%
     test_df = df[250:] 
     return train_df, test_df    
