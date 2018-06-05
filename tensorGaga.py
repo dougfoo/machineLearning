@@ -151,32 +151,6 @@ def test_gaga_nn2_tensor():
         accuracy = 100 * sum(correct) / len(correct)
         print('Network architecture %d-%d-2, accuracy: %.2f%%' % (len(rfeatures), hidden_nodes, accuracy))
 
-    # Load all files from a directory in a DataFrame.
-# Download and process the dataset files.
-def get_gaga_as_pandas_datasets():
-    def load_directory_data(directory):
-        data = {}
-        data["sentence"] = []
-        data["file"] = []
-        for file_path in os.listdir(directory):
-            with tf.gfile.GFile(os.path.join(directory, file_path), "r") as f:
-                data["sentence"].append(f.read())
-                data["file"].append(str(file_path))
-        return pd.DataFrame.from_dict(data)
-
-    # Merge positive and negative examples, add a gagaflag column and shuffle.
-    def load_dataset(directory):
-        pos_df = load_directory_data(os.path.join(directory, "gaga"))
-        neg_df = load_directory_data(os.path.join(directory, "clash"))
-        pos_df["gagaflag"] = 1
-        neg_df["gagaflag"] = 0
-        return pd.concat([pos_df, neg_df]).sample(frac=1).reset_index(drop=True)
-        
-    df = load_dataset("songclass/lyrics/")
-    df = df.sample(frac=1) # random shuffle and sample
-    train_df = df[:250]  # arb cut 70%
-    test_df = df[250:] 
-    return train_df, test_df    
     
 # alternative way to try lady gaga text classifier
 def test_gaga_nn3_tensor():
