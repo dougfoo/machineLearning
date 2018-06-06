@@ -43,47 +43,62 @@ def test_basics():
 
     print ('cuda?', torch.cuda.is_available())
 
-def test_nn_basic():
+def test_gaga_lr():
     dtype = torch.float
-    device = torch.device("cpu")
-    # dtype = torch.device("cuda:0") # Uncomment this to run on GPU
+    data, yarr, features, fnames = getGagaData(maxrows=200, maxfeatures=2000, gtype=None, stopwords='english')
+    xMatrix = shuffle(data, random_state=0)
+    yArr = shuffle(np.array(yarr).reshape(-1,1), random_state=0)
 
-    # N is batch size; D_in is input dimension;
-    # H is hidden dimension; D_out is output dimension.
-    N, D_in, H, D_out = 64, 1000, 100, 10
+    partition = int(.70*len(yArr))
+    trainingX = xMatrix[:partition]
+    trainingY = yArr[:partition]
+    testX = xMatrix[partition:]
+    testY = yArr[partition:]
 
     # Create random input and output data
-    x = torch.randn(N, D_in, device=device, dtype=dtype)
-    y = torch.randn(N, D_out, device=device, dtype=dtype)
-    print (type(x))
+    x = torch.tensor(trainingX, dtype=dtype)
+    y = torch.tensor(trainingY, dtype=dtype)  
+    testx = torch.tensor(testX, dtype=dtype)
+    testy = torch.tensor(testY, dtype=dtype)  
 
     # Randomly initialize weights
-    w1 = torch.randn(D_in, H, device=device, dtype=dtype)
-    w2 = torch.randn(H, D_out, dtype=dtype)
+    torch.manual_seed(0)
+    w1 = torch.randn(len(features),1, dtype=dtype)
 
-    learning_rate = 1e-6
-    for t in range(500):
-        # Forward pass: compute predicted y
-        h = x.mm(w1)               # matrixMult or dot prod == same?
-        h_relu = h.clamp(min=0)    # min/max = clamp function
-        y_pred = h_relu.mm(w2)
+    learning_rate = 0.1
+    for t in range(25000):
+        h = x.mm(w1)               # each feature * weight
+        y_pred = h.sigmoid()
 
         # Compute and print loss
         loss = (y_pred - y).pow(2).sum().item()  # item?
-        print(t, loss)
+        if (t % 5000 == 0):
+            log.warn('loop %d, %.8f'%(t, loss))
 
-        # Backprop to compute gradients of w1 and w2 with respect to loss
-        grad_y_pred = 2.0 * (y_pred - y)
-        grad_w2 = h_relu.t().mm(grad_y_pred)
-        grad_h_relu = grad_y_pred.mm(w2.t())
-        grad_h = grad_h_relu.clone()
-        grad_h[h < 0] = 0
-        grad_w1 = x.t().mm(grad_h)
+        grad_w1 = x.t().mm(y_pred - y)
 
         # Update weights using gradient descent
         w1 -= learning_rate * grad_w1
-        w2 -= learning_rate * grad_w2
 
+    print('training complete ', loss)
+    print('test validation phase')
+
+    h = testx.mm(w1)               # matrixMult or dot prod == same?
+    y_pred = h.sigmoid().round()
+
+    # y_pred = h.mm(w2)
+    # y_pred_sig = y_pred.sigmoid()
+    log.debug('ytest', pandas.DataFrame(testy.numpy()).head())
+    log.debug('ypred', pandas.DataFrame(y_pred.numpy()).head())
+
+    # Compute and print loss after rounding to 0/1's
+    testDiffs = (y_pred - testy)
+    p = pandas.DataFrame(testDiffs.numpy())
+    log.debug('diffs', p.head())
+    tests = len(p)
+    correct = len(p[(p[0] == 0)])
+    print('total correct/tests', correct, tests)
+    print('correct % =', round((correct/tests)*100, 2))
 
 def test_nn_gaga():
     dtype = torch.float
@@ -204,6 +219,7 @@ print(net)
 print ('--------------')
 #test_nn_basic()
 #test_nn_gaga()
+test_gaga_lr()
 
 '''
 x = torch.ones(2, 2, requires_grad=True)
