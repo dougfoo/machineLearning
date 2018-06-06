@@ -43,19 +43,20 @@ def test_basics():
 
     print ('cuda?', torch.cuda.is_available())
 
+# re-done base case logistic regression using bits of pytorch
 def test_gaga_lr():
-    dtype = torch.float
+    # input specific setup
     data, yarr, features, fnames = getGagaData(maxrows=200, maxfeatures=2000, gtype=None, stopwords='english')
     xMatrix = shuffle(data, random_state=0)
     yArr = shuffle(np.array(yarr).reshape(-1,1), random_state=0)
-
     partition = int(.70*len(yArr))
     trainingX = xMatrix[:partition]
     trainingY = yArr[:partition]
     testX = xMatrix[partition:]
     testY = yArr[partition:]
 
-    # Create random input and output data
+    # wrap in torch functions
+    dtype = torch.float
     x = torch.tensor(trainingX, dtype=dtype)
     y = torch.tensor(trainingY, dtype=dtype)  
     testx = torch.tensor(testX, dtype=dtype)
@@ -63,21 +64,17 @@ def test_gaga_lr():
 
     # Randomly initialize weights
     torch.manual_seed(0)
-    w1 = torch.randn(len(features),1, dtype=dtype)
+    w1 = torch.randn(len(features),1, dtype=dtype)  # (n,1) shape
 
     learning_rate = 0.1
     for t in range(25000):
         h = x.mm(w1)               # each feature * weight
         y_pred = h.sigmoid()
-
-        # Compute and print loss
-        loss = (y_pred - y).pow(2).sum().item()  # item?
+        loss = (y_pred - y).pow(2).sum().item()  
         if (t % 5000 == 0):
             log.warn('loop %d, %.8f'%(t, loss))
 
         grad_w1 = x.t().mm(y_pred - y)
-
-        # Update weights using gradient descent
         w1 -= learning_rate * grad_w1
 
     print('training complete ', loss)
@@ -86,8 +83,6 @@ def test_gaga_lr():
     h = testx.mm(w1)               # matrixMult or dot prod == same?
     y_pred = h.sigmoid().round()
 
-    # y_pred = h.mm(w2)
-    # y_pred_sig = y_pred.sigmoid()
     log.debug('ytest', pandas.DataFrame(testy.numpy()).head())
     log.debug('ypred', pandas.DataFrame(y_pred.numpy()).head())
 
@@ -100,16 +95,14 @@ def test_gaga_lr():
     print('total correct/tests', correct, tests)
     print('correct % =', round((correct/tests)*100, 2))
 
-def test_nn_gaga():
+# torch neural net manual
+def test_gaga_nn():
     dtype = torch.float
     device = torch.device("cpu")
-    # dtype = torch.device("cuda:0") # Uncomment this to run on GPU
-
-    # N is batch size; D_in is input dimension;
-    # H is hidden dimension; D_out is output dimension.
-    N = 200 # examples
+    N = 200 # training examples
     F = 2000 # features
-    D_in, H, D_out = F, 100, 2
+    H = 400 # hidden nodes
+    D_in, D_out = F, 2  # 100 hidden nodes, 2 output nodes
 
     data, yarr, features, fnames = getGagaData(maxrows=N, maxfeatures=F, gtype=None, stopwords='english')
     xMatrix = shuffle(data, random_state=0)
@@ -127,35 +120,33 @@ def test_nn_gaga():
     testx = torch.tensor(testX, dtype=dtype)
     testy = torch.tensor(pd.get_dummies(testY).values, dtype=dtype)  # onehot y's
 
-    # Randomly initialize weights
+    # Randomly initialize weights, repeatable w/ seed
     torch.manual_seed(0)
     w1 = torch.randn(D_in, H, device=device, dtype=dtype)
     w2 = torch.randn(H, D_out, dtype=dtype)
 
-    learning_rate = 1e-6
-    for t in range(5000):
+    #gradient descent
+    learning_rate = 0.0001
+    for t in range(25000):
         # Forward pass: compute predicted y
         h = x.mm(w1)               # matrixMult or dot prod == same?
-        h_relu = h.clamp(min=0)    # min/max = clamp function
-        y_pred = h_relu.mm(w2)
-        #y_pred = h.mm(w2).sigmoid()
+        h_relu = h.clamp(min=0)    # min/max = clamp function, builds relu
+        y_pred = h_relu.mm(w2)     
 
-        # Compute and print loss
-        loss = (y_pred - y).pow(2).sum().item()  # item?
-        if (t % 500 == 0):
+        loss = (y_pred - y).pow(2).sum().item()  # item unwraps
+        if (t % 1000 == 0):
             print(t, loss)
+            if (loss < 0.0001):
+                break
 
-        # Backprop to compute gradients of w1 and w2 with respect to loss
+        # Manual backprop routines
         grad_y_pred = 2.0 * (y_pred - y)
-        grad_w2 = h_relu.t().mm(grad_y_pred)
+        grad_w2 = h_relu.t().mm(grad_y_pred) 
         grad_h_relu = grad_y_pred.mm(w2.t())
         grad_h = grad_h_relu.clone()
-        #grad_w2 = h.t().mm(grad_y_pred)
-        #grad_h = grad_y_pred.mm(w2.t()).clone()
-        grad_h[h < 0] = 0   # 0's them out
+        grad_h[h < 0] = 0   # 0 out negatives, like relu ???
         grad_w1 = x.t().mm(grad_h)
 
-        # Update weights using gradient descent
         w1 -= learning_rate * grad_w1
         w2 -= learning_rate * grad_w2
 
@@ -168,8 +159,6 @@ def test_nn_gaga():
     y_pred2 = pd.get_dummies(y_pred.argmax(dim=1))   # to 0,1 -> 2 col arr
     y_pred2 = torch.tensor(y_pred2.values, dtype=dtype)
 
-    # y_pred = h.mm(w2)
-    # y_pred_sig = y_pred.sigmoid()
     print('ytest', pandas.DataFrame(testy.numpy()).head())
     print('ypred', pandas.DataFrame(y_pred.numpy()).head())
     print('ypred2', pandas.DataFrame(y_pred2.numpy()).head())
@@ -182,6 +171,93 @@ def test_nn_gaga():
     correct = len(p[(p[0]==0) & (p[1]==0)])
     print('total correct/tests',correct,tests)
     print('correct % =', round((correct/tests)*100,2))
+    print('hidden nodes %d'%H)
+
+def test_gaga_nn_auto():
+    dtype = torch.float
+    device = torch.device("cpu")
+    N = 200  # training examples
+    F = 2000  # features
+    D_in, H, D_out = F, 500, 2  # 100 hidden nodes, 2 output nodes
+
+    data, yarr, features, fnames = getGagaData(maxrows=N, maxfeatures=F, gtype=None, stopwords='english')
+    xMatrix = shuffle(data, random_state=0)
+    yArr = shuffle(yarr, random_state=0)
+
+    partition = int(.70*len(yArr))
+    trainingX = xMatrix[:partition]
+    trainingY = yArr[:partition]
+    testX = xMatrix[partition:]
+    testY = yArr[partition:]
+
+    # Create random input and output data
+    x = torch.tensor(trainingX, dtype=dtype)
+    y = torch.tensor(pd.get_dummies(trainingY).values, dtype=dtype)  # onehot y's
+    testx = torch.tensor(testX, dtype=dtype)
+    testy = torch.tensor(pd.get_dummies(testY).values,
+                         dtype=dtype)  # onehot y's
+
+    # Randomly initialize weights, repeatable w/ seed
+    torch.manual_seed(0)
+    w1 = torch.randn(D_in, H, device=device, dtype=dtype, requires_grad=True)
+    w2 = torch.randn(H, D_out, dtype=dtype, requires_grad=True)
+
+    #gradient descent using autograd
+    learning_rate = 0.000001
+    for t in range(25000):
+        # Forward pass: compute predicted y
+        h = x.mm(w1)               # matrixMult or dot prod == same?
+        h_relu = h.clamp(min=0)    # min/max = clamp function, builds relu
+        y_pred = h_relu.mm(w2)
+
+        loss = (y_pred - y).pow(2).sum().item()  # item unwraps
+        if (t % 1000 == 0):
+            print(t, loss)
+            if (loss < 0.0001):
+                break
+
+        if grad_w1 is not None:
+            grad_w1.grad.zero_()
+        if grad_w2 is not None:
+            grad_w2.grad.zero_()
+        loss.backward()
+
+        grad_w1 = w1.grad()
+        grad_w2 = w2.grad()
+
+        # Manual backprop routines
+        '''
+        grad_y_pred = 2.0 * (y_pred - y)
+        grad_w2 = h_relu.t().mm(grad_y_pred)
+        grad_h_relu = grad_y_pred.mm(w2.t())
+        grad_h = grad_h_relu.clone()
+        grad_h[h < 0] = 0   # 0 out negatives, like relu ???
+        grad_w1 = x.t().mm(grad_h)
+'''
+        w1 -= learning_rate * grad_w1
+        w2 -= learning_rate * grad_w2
+
+    print('training complete ', loss)
+    print('test validation phase')
+
+    h = testx.mm(w1)               # matrixMult or dot prod == same?
+    h_relu = h.clamp(min=0)    # min/max = clamp function
+    y_pred = h_relu.mm(w2)
+    y_pred2 = pd.get_dummies(y_pred.argmax(dim=1))   # to 0,1 -> 2 col arr
+    y_pred2 = torch.tensor(y_pred2.values, dtype=dtype)
+
+    print('ytest', pandas.DataFrame(testy.numpy()).head())
+    print('ypred', pandas.DataFrame(y_pred.numpy()).head())
+    print('ypred2', pandas.DataFrame(y_pred2.numpy()).head())
+
+    # Compute and print loss after rounding to 0/1's
+    testDiffs = (y_pred2 - testy)
+    p = pandas.DataFrame(testDiffs.numpy())
+    print('diffs', p.head())
+    tests = len(p)
+    correct = len(p[(p[0] == 0) & (p[1] == 0)])
+    print('total correct/tests', correct, tests)
+    print('correct % =', round((correct/tests)*100, 2))
 
 class Net(nn.Module):
     def __init__(self):
@@ -217,9 +293,8 @@ class Net(nn.Module):
 net = Net()
 print(net)
 print ('--------------')
-#test_nn_basic()
-#test_nn_gaga()
-test_gaga_lr()
+test_gaga_nn()
+#test_gaga_lr()
 
 '''
 x = torch.ones(2, 2, requires_grad=True)
