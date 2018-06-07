@@ -201,9 +201,9 @@ def test_gaga_dnn_tensor():
 
 if __name__ == "__main__":
     log.getLogger().setLevel(log.INFO)
-    # test_gaga_tensor()
+    test_gaga_tensor()
     # test_gaga_nn2_tensor()test_gaga
 #    test_gaga_nn2_tensor()
-    test_gaga_nn3_tensor()
+#    test_gaga_nn3_tensor()
 #    test_gaga_dnn_tensor()
 

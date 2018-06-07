@@ -103,7 +103,7 @@ def test_linreg_est_tensor():
 def test_grad_tensor_logging():
     tf.reset_default_graph()
     n_epochs = 400
-    learning_rate = 0.01
+    learning_rate = 0.001
 
     from sklearn.datasets import fetch_california_housing
     housing = fetch_california_housing()  # auto-caches to /Users/dougfoo/scikit_learn_data/
@@ -338,10 +338,10 @@ if __name__ == "__main__":
     # test_basic_tensor()
     # test_basic_tensor2()
     # test_basic_tensor3()
-    test_basic_tensor4()
+    # test_basic_tensor4()
     # test_linreg_normal_tensor()
     # test_linreg_est_tensor()
-    # test_grad_tensor_logging()
+    test_grad_tensor_logging()
     # test_mod_tensor()
     # test_logreg_tensor()
     # test_nn_tensor()
