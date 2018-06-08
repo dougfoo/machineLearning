@@ -184,11 +184,11 @@ def test_gaga_nn():
 def test_gaga_nn_auto():
     dtype = torch.float
     device = torch.device("cpu")
-    N = 200  # training examples
     F = 500  # features
     D_in, H, D_out = F, 20, 2  # 100 hidden nodes, 2 output nodes
 
-    data, yarr, features, fnames = getGagaData(maxrows=N, maxfeatures=F, gtype=None, stopwords='english')
+    data, yarr, features, fnames = getGagaData(maxrows=500, maxfeatures=F, gtype=None, stopwords='english')
+    
     xMatrix = shuffle(data, random_state=0)
     yArr = shuffle(yarr, random_state=0)
 
@@ -206,26 +206,32 @@ def test_gaga_nn_auto():
 
     # Randomly initialize weights, repeatable w/ seed
     torch.manual_seed(0)
-    w1 = torch.randn(D_in, H, device=device, dtype=dtype, requires_grad=True) #True
-    w2 = torch.randn(H, D_out, dtype=dtype, requires_grad=True) #True
+    np.random.seed(0)
+    w1_rd = np.random.rand(D_in, H)
+    w2_rd = np.random.rand(H, D_out)
+    w1 = torch.tensor(w1_rd, dtype=dtype, requires_grad=True)
+    w2 = torch.tensor(w2_rd, dtype=dtype, requires_grad=True)
+
+#    w1 = torch.randn(D_in, H, device=device, dtype=dtype, requires_grad=True) #True
+#    w2 = torch.randn(H, D_out, dtype=dtype, requires_grad=True) #True
 
     #gradient descent using autograd
-    learning_rate = 0.001
-    for t in range(100000):
+    learning_rate = 0.005
+    for t in range(1500):
         # Forward pass: compute predicted y
         h = x.mm(w1)               # matrixMult or dot prod == same?
         y_pred = h.mm(w2).sigmoid()
 
         loss = (y_pred - y).pow(2).sum()  # item unwraps
-        if (t % 1000 == 0):
+        if (t % 200 == 0):
             print(t, loss.item())
             if (loss < 0.0001):
                 break
 
         # autograd backprop
-        loss.backward()
+        loss.backward()  # goes thru graph
 
-        with torch.no_grad():
+        with torch.no_grad():  # halt autodiff 
             w1 -= learning_rate * w1.grad
             w2 -= learning_rate * w2.grad
             w1.grad.zero_()

@@ -33,6 +33,7 @@ def create_train_model(hidden_nodes, num_iters, Xtrain, ytrain, step_size=0.005)
     # Variables for two group of weights between the three layers of the network
     # np.random.seed(rseed)   # depends if you want repeatability or not
     with tf.name_scope("Weights"):
+        np.random.seed(0)
         W1 = tf.Variable(np.random.rand(Xtrain.shape[1], hidden_nodes), dtype=tf.float64, name='W1')  #4,n
         W2 = tf.Variable(np.random.rand(hidden_nodes, ytrain.shape[1]), dtype=tf.float64, name='W2')  #n,3
         tf_var_summaries(W1)

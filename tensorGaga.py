@@ -1,7 +1,6 @@
 import requests, pandas, io, numpy, argparse, math
 import numpy as np
 from nnutils import *
-import featureEngineering as fe
 from myutils import *
 from mpmath import *
 from gdsolvers import *
@@ -13,8 +12,8 @@ from sklearn.utils import shuffle
 import tensorflow as tf
 
 
-def getGagaTfFormat(maxrows=500):
-    xMatrix,yArr,features,fnames = fe.getGagaData(maxrows,stopwords='english')
+def getGagaTfFormat(maxrows=500, numfeatures=500):
+    xMatrix,yArr,features,fnames = getGagaData(maxrows,stopwords='english')
     xMatrix = shuffle(xMatrix, random_state=0)   
     yArr = shuffle(yArr, random_state=0) 
 
@@ -27,7 +26,7 @@ def getGagaTfFormat(maxrows=500):
     X = np.array(trainingMatrix)
     Y = trainingY
     from logisticRegression import reduceFeatures
-    X,rfeatures = reduceFeatures(X, Y, features, 500)
+    X, rfeatures = reduceFeatures(X, Y, features, numfeatures)
 
     xs = X
     ys = np.array(Y).reshape(-1,1)  #col orient
@@ -37,8 +36,8 @@ def getGagaTfFormat(maxrows=500):
 
     return X,y, features, rfeatures, testMatrix, testY  # testM/testY arne't in TF formats
 
-def getGagaTfFormat2(maxrows=500):
-    xMatrix,yArr,features,fnames = fe.getGagaData(maxrows,stopwords='english')
+def getGagaTfFormat2(maxrows=500, numfeatures=500):
+    xMatrix,yArr,features,fnames = getGagaData(maxrows,stopwords='english')
     xMatrix = shuffle(xMatrix, random_state=0)   
     yArr = shuffle(yArr, random_state=0) 
 
@@ -50,7 +49,7 @@ def getGagaTfFormat2(maxrows=500):
 
     trainingX = np.array(trainingX)
     from logisticRegression import reduceFeatures
-    trainingX, rfeatures = reduceFeatures(trainingX, trainingY, features, 500)
+    trainingX, rfeatures = reduceFeatures(trainingX, trainingY, features, numfeatures)
 
     # reduce testSet to same features
     df = pandas.DataFrame(testX, columns=features)
@@ -118,13 +117,13 @@ def test_gaga_tensor():
 def test_gaga_nn2_tensor():
     tf.reset_default_graph()
 
-    num_hidden_nodes = [10,20]  # must be included in weight1/weight2 grid below
+    num_hidden_nodes = [10]  # must be included in weight1/weight2 grid below
     weights1 = {5: None, 10: None, 20: None, 30: None, 50: None}
     weights2 = {5: None, 10: None, 20: None, 30: None, 50: None}
     num_iters = 1500
 
     ### configure and train ###
-    Xtrain, ytrain, rfeatures, Xtest, ytest = getGagaTfFormat2()
+    Xtrain, ytrain, rfeatures, Xtest, ytest = getGagaTfFormat2(numfeatures=500)
     for node in num_hidden_nodes:
         weights1[node], weights2[node] = create_train_model(node, num_iters, Xtrain, ytrain)       
  
@@ -188,22 +187,11 @@ def test_gaga_nn3_tensor():
     print ("Test set accuracy: {accuracy}".format(**test_eval_result))
 
 
-# should use high level DNNClassifier
-def test_gaga_dnn_tensor():
-    classifier = tf.estimator.DNNClassifier(
-        feature_columns=my_feature_columns,        # Two hidden layers of 10 nodes each.
-        hidden_units=[10, 10], n_classes=3)        # The model must choose between 3 classes.
-
-    classifier.train(input_fn=lambda: iris_data.train_input_fn(train_x, train_y, args.batch_size), steps=args.train_steps)
-    eval_result = classifier.evaluate(input_fn=lambda:iris_data.eval_input_fn(test_x, test_y, args.batch_size))
-    print('\nTest set accuracy: {accuracy:0.3f}\n'.format(**eval_result))
-
-
 if __name__ == "__main__":
     log.getLogger().setLevel(log.INFO)
-    test_gaga_tensor()
+#    test_gaga_tensor()
     # test_gaga_nn2_tensor()test_gaga
-#    test_gaga_nn2_tensor()
+    test_gaga_nn2_tensor()
 #    test_gaga_nn3_tensor()
 #    test_gaga_dnn_tensor()
 
