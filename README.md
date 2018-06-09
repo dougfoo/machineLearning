@@ -1,14 +1,14 @@
 #  My Machine Learning Playground
 Everything from 101 Linear and Logistic Regression, to Neural Networks on Google TensorFlow, to GAN's on PyTorch
 
-[Check out this blog post](https://medium.com/ai-society/gans-from-scratch-1-a-deep-introduction-with-code-in-pytorch-and-tensorflow-cb03cdcdba0f) for an introduction to Generative Networks. 
+[Interesting blogs/posts](https://medium.com/ai-society/gans-from-scratch-1-a-deep-introduction-with-code-in-pytorch-and-tensorflow-cb03cdcdba0f) for an introduction to Generative Networks. 
 
-[My notebooks](https://github.com/dougfoo/machineLearning/blob/master/notebooks/Intro.ipynb) (moved to wiki)
+[My notebooks](https://github.com/dougfoo/machineLearning/blob/master/notebooks/Intro.ipynb) (may move to wiki)
 
-[My wiki](https://github.com/dougfoo/machineLearning/wiki)
+[My wiki (may scrap later)](https://github.com/dougfoo/machineLearning/wiki)
 
 
-## Training Links
+## Training Links (export from my bookmarks)
     https://en.wikipedia.org/wiki/Boltzmann_machine
     https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame
     http://docs.sympy.org/latest/tutorial/calculus.html
