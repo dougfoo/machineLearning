@@ -3,7 +3,7 @@ Everything from 101 Linear and Logistic Regression, to Neural Networks on Google
 
 [My notebooks](https://github.com/dougfoo/machineLearning/blob/master/notebooks/Intro.ipynb) (moved to wiki)
 
-[My wiki](https://github.com/dougfoo/machineLearning/wiki)
+[My wiki (may scrap later)](https://github.com/dougfoo/machineLearning/wiki)
 
 
 ## Misc Training Links (Apology not hyperlinked)
