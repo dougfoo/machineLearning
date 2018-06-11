@@ -2,7 +2,7 @@ from __future__ import print_function
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as tfun
 from myutils import *
 from sklearn.utils import shuffle
 from torch.autograd import Variable
@@ -15,15 +15,6 @@ def test_basics():
 
     x = x.new_ones(5, 3)
     print(x)
-    """ 
-    x = torch.zeros(5, 3, dtype=torch.long)
-    print(x)
-
-    x = x.new_ones(5, 3, dtype=torch.double)      # new_* methods take in sizes
-    print(x)
-
-    x = torch.randn_like(x, dtype=torch.float)    # override dtype!
-    print(x)    """
 
     y = torch.rand(5, 3)
     print (y)
@@ -98,6 +89,7 @@ def test_gaga_lr():
     print('correct % =', round((correct/tests)*100, 2))
 
 # torch neural net manual
+# @TODO this is work in progress, something wrong w/ backprop
 def test_gaga_nn():
     dtype, device = torch.float,torch.device("cpu")
     F,H = 500,20 # features, hiddennodes
@@ -128,26 +120,33 @@ def test_gaga_nn():
     learning_rate = 0.005
     for t in range(1500):
         # Forward pass: compute predicted y
-        h = x.mm(w1)               # matrixMult or dot prod == same?
+        h = x.mm(w1)               
         h_sig = h.sigmoid()        
-        y_pred = h_sig.mm(w2).sigmoid()
+        y_pred = h_sig.mm(w2)
+        y_pred_sig = y_pred.sigmoid()
 
-        loss = (y_pred - y).pow(2).sum().item()  # item unwraps
+        loss = (y_pred_sig - y).pow(2).sum().item()  # item unwraps
         if (t % 200 == 0):
             print(t, loss)
             if (loss < 0.0001):
                 break
 
         # Manual backprop routines
-        grad_y_pred = 2.0 * (y_pred - y)
-        grad_w2 = h_sig.t().mm(grad_y_pred) 
-        grad_h_sig = grad_y_pred.mm(w2.t())
+        grad_y_pred = 2.0*(y_pred_sig - y)  # dC/da = 2*(a-y)
+        da_dz = h_sig.t().mm(1-h_sig)
+        grad_w2 = h_sig.t().mm(grad_y_pred).t().mm(da_dz).t() # dC/dw2 = dz/dw2 * da/dz * dC/da
+
+        grad_h_sig = h_sig*(1-h_sig)      
         grad_h = grad_h_sig.clone()
-        grad_w1 = x.t().mm(grad_h)
+        grad_w1 = x.t().mm(grad_h)  # dC/dw1 = dC/dx * dx/dz * dz/dw2 * da/dz * dC/da ???
+                                   # da/dz = sigmoid(a)*(1-sigmoid(a))
+                                   # dC/da = 2*(h-y) at top layer
+                                   # dz/dw1 = x
+                                   # dz/dw2 = h
 
         if (t == 0):
-            print('h_sig',grad_h_sig)
-            print(grad_w1, grad_w2)
+            print('h_sig', grad_h)
+            print('w2', grad_w2)
 
         w1 -= learning_rate * grad_w1
         w2 -= learning_rate * grad_w2
@@ -222,7 +221,7 @@ def test_gaga_nn_auto():
             w1 -= learning_rate * w1.grad
             w2 -= learning_rate * w2.grad
             if (t == 0):
-                print(w1.grad, w2.grad)
+                print(w2.grad)
             w1.grad.zero_()
             w2.grad.zero_()
 
@@ -245,6 +244,55 @@ def test_gaga_nn_auto():
     print('correct % =', round((correct/tests)*100, 2))
     print('hidden nodes %d' % H)
 
+def test_pytorch_nn():
+    net = Net()
+    print(net)
+
+    params = list(net.parameters())  
+    print(len(params))   # list of major params matrices
+    print(params[0].size())  # conv1's .weight
+
+    input = torch.randn(1, 1, 32, 32)  # initial dummy input
+    output = net(input)
+    target = torch.arange(1, 11)  # a dummy target, for example
+    target = target.view(1, -1)  # what is this ??
+    criterion = nn.MSELoss()
+
+    loss = criterion(output, target)
+    print('loss tree',loss)
+    print(loss.grad_fn)  # MSELoss
+    print(loss.grad_fn.next_functions[0][0])  # Linear
+    print(loss.grad_fn.next_functions[0][0].next_functions[0][0])  # ReLU
+
+    # backprop
+    loss.backward()
+    print('conv1.bias.grad after backward')
+    print(net.conv1.bias.grad)
+
+    # sample backprop otpmizer
+    import torch.optim as optim
+    optimizer = optim.SGD(net.parameters(), lr=0.01) # learning rate 0.01 / for each parameter matrix
+
+    # in your training loop:
+    for epoch in range(500):
+        optimizer.zero_grad()   # zero the gradient buffers
+        output = net(input)
+        loss = criterion(output, target)
+        loss.backward()
+        optimizer.step()    # Does the update
+        if (epoch % 100 == 0):
+            print('Epoch %s MSE %s' % (epoch, loss))
+
+    print('conv1.bias.grad after optimizer')
+    print(net.conv1.bias.grad)
+    print ('--training done---')
+
+    print('--test start---')
+    test_input = torch.randn(1, 1, 32, 32)  # initial dummy input
+    print ('input',test_input)
+    print ('output/prediction',net.forward(test_input))   # returns activation
+
+# direct from tutorial
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -257,17 +305,19 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
+    # forward prop
     def forward(self, x):
         # Max pooling over a (2, 2) window
-        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
+        x = tfun.max_pool2d(tfun.relu(self.conv1(x)), (2, 2))
         # If the size is a square you can only specify a single number
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        x = x.view(-1, self.num_flat_features(x))
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = tfun.max_pool2d(tfun.relu(self.conv2(x)), 2)
+        x = x.view(-1, self.num_flat_features(x))  #purpose?
+        x = tfun.relu(self.fc1(x))
+        x = tfun.relu(self.fc2(x))
+        x = self.fc3(x)  # linear transform
         return x
 
+    # whats purpose here
     def num_flat_features(self, x):
         size = x.size()[1:]  # all dimensions except the batch dimension
         num_features = 1
@@ -276,39 +326,10 @@ class Net(nn.Module):
         return num_features
 
 
-net = Net()
-print(net)
 print ('--------------')
-test_gaga_nn()
-print('--------------******-----------')
-test_gaga_nn_auto()
+test_pytorch_nn()
+#print('--------------******-----------')
+#test_gaga_nn_auto()
 #test_gaga_lr()
 
 
-
-'''
-x = torch.ones(2, 2, requires_grad=True)
-print(x)
-y = x + 2
-print(y)
-print(y.grad_fn)
-z = y * y * 3
-out = z.mean()
-print(z, out)
-
-a = torch.randn(2, 2)
-a = ((a * 3) / (a - 1))
-print('a',a)
-print(a.requires_grad)
-a.requires_grad_(True)
-print(a.requires_grad)
-b = (a * a).sum()
-print('b=a*a',b)
-print('b',b.grad_fn)
-
-print(z, out)
-out.backward()
-print(z, out)
-
-print(x.grad)
-'''
