@@ -342,9 +342,6 @@ def test_pytorch_nn_gaga():
     print ('input',test_input)
     print ('output/prediction',net.forward(test_input))   # returns activation
 
-
-
-
 print ('--------------')
 test_pytorch_nn_gaga()
 #test_pytorch_nn()
