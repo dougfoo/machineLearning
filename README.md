@@ -7,15 +7,15 @@ Everything from 101 Linear and Logistic Regression, to Neural Networks on Google
 
 
 ## Courses
-    [Udacity course](https://www.udacity.com/course/machine-learning-engineer-Udacitynanodegree--nd009t)
-    [Old Andrew Ng class using Octave (free)](https://www.coursera.org/learn/machine-learning)
-    [Latest Deeplearning.ai course](https://www.coursera.org/specializations/deep-learning)
-    [popular course fast.ai](http://www.fast.ai/)
+- [Udacity course](https://www.udacity.com/course/machine-learning-engineer-Udacitynanodegree--nd009t)
+- [Old Andrew Ng class using Octave (free)](https://www.coursera.org/learn/machine-learning)
+- [Latest Deeplearning.ai course](https://www.coursera.org/specializations/deep-learning)
+- [popular course fast.ai](http://www.fast.ai/)
 
 ## Video collection
-    [Great 3Brown1Blue series on NN](https://youtu.be/aircAruvnKk)
-    [Andrew Ng talk on state of AI](https://www.youtube.com/watch?v=NKpuX_yzdYs&t=210s&index=7&list=PL6qjgNM1wOLg-Xoq1fOvYoi82s44oYQcs) 
-    [GOodfellow Phd Defense](https://www.youtube.com/watch?v=ckoD_bE8Bhs&t=0s&index=18&list=PL6qjgNM1wOLg-Xoq1fOvYoi82s44oYQcs) 
+- [Great 3Brown1Blue series on NN](https://youtu.be/aircAruvnKk)
+- [Andrew Ng talk on state of AI](https://www.youtube.com/watch?v=NKpuX_yzdYs&t=210s&index=7&list=PL6qjgNM1wOLg-Xoq1fOvYoi82s44oYQcs) 
+- [GOodfellow Phd Defense](https://www.youtube.com/watch?v=ckoD_bE8Bhs&t=0s&index=18&list=PL6qjgNM1wOLg-Xoq1fOvYoi82s44oYQcs) 
 
 ## Vanilla GANs
 Vanilla GANs found in this project were developed based on the original paper [Generative Adversarial Networks](https://arxiv.org/abs/1406.2661) by Goodfellow et al.
