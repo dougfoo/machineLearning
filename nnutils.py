@@ -9,6 +9,10 @@ from myutils import *
 def encode(series):
   return pd.get_dummies(series.astype(str)) # ?
 
+#######################
+# tensorflow specific #
+#######################
+
 # for plotting weight summaries
 def tf_var_summaries(var):
     with tf.name_scope('summaries'):
@@ -99,3 +103,58 @@ def relu(X):
             b = tf.Variable(0.0, name='bias')
             z = tf.add(tf.matmul(X,w), b, name='z')
             return tf.maximum(z, threshold,name='max')
+
+
+####################
+# pytorch specific #
+####################
+import torch
+import torch.nn as nn
+import torch.nn.functional as tfun
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        # 1 input image channel, 6 output channels, 5x5 square convolution
+        self.conv1 = nn.Conv2d(1, 6, 5)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        # an affine operation: y = Wx + b
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+
+    # forward prop
+    def forward(self, x):
+        # Max pooling over a (2, 2) window
+        x = tfun.max_pool2d(tfun.relu(self.conv1(x)), (2, 2))
+        # If the size is a square you can only specify a single number
+        x = tfun.max_pool2d(tfun.relu(self.conv2(x)), 2)
+        x = x.view(-1, self.num_flat_features(x))  #purpose?
+        x = tfun.relu(self.fc1(x))
+        x = tfun.relu(self.fc2(x))
+        x = self.fc3(x)  # linear transform
+        return x
+
+    # whats purpose here
+    def num_flat_features(self, x):
+        size = x.size()[1:]  # all dimensions except the batch dimension
+        num_features = 1
+        for s in size:
+            num_features *= s
+        return num_features
+
+# extends Net w/ fc internal model 500:20:2 model, using sigmoid
+class GagaNet(nn.Module):
+    def __init__(self):
+        super(GagaNet, self).__init__()
+        self.inp = nn.Linear(500, 20)
+        self.hid = nn.Linear(20, 2)
+
+    # forward prop
+    def forward(self, x):
+        # Max pooling over a (2, 2) window
+        x = self.inp(x)
+        x = tfun.sigmoid(self.inp(x))
+        x = self.hid(x)
+        x = tfun.sigmoid(self.hid(x))
+        return x
