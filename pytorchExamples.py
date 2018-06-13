@@ -295,18 +295,29 @@ def test_pytorch_nn():
 
 # apply higher level nn.Net lib to text
 def test_pytorch_nn_gaga():
+    torch.set_printoptions(threshold=10)
     net = GagaNet()
-    print(net)
+    print(net) # print structure
 
-    params = list(net.parameters())  
-    print(len(params))   # list of major params matrices
-    print(params[0].size())  # conv1's .weight
+    # get test data
+    data, yarr, features, fnames = getGagaData(maxrows=500, maxfeatures=500, gtype=None, stopwords='english')
+    
+    xMatrix = shuffle(data, random_state=0)
+    yArr = shuffle(yarr, random_state=0)
+    partition = int(.70*len(yArr))
+    trainingX = xMatrix[:partition]
+    trainingY = yArr[:partition]
+    testX = xMatrix[partition:]
+    testY = yArr[partition:]
 
-    input = torch.randn(1, 1, 500, 1)  # initial dummy input 500x1
-    output = net(input)
-    target = torch.tensor([[1.0]])  # expected 1 for 1 sample
+    input = torch.tensor(xMatrix, dtype=torch.float)  # m x 500
+    target = torch.tensor(yArr, dtype=torch.float).view(-1,1)    # 1 x m
+    test_input = torch.tensor(testX, dtype=torch.float)  # m x 500
+    test_target =torch.tensor(testY, dtype=torch.float).view(-1,1)
+
     criterion = nn.MSELoss()
 
+    output = net(input)
     loss = criterion(output, target)
     print('loss tree',loss)
     print(loss.grad_fn)  # MSELoss
@@ -314,9 +325,9 @@ def test_pytorch_nn_gaga():
 
     # backprop
     loss.backward()
-    print('net.inp.grad & net.hid.grad after backward')
-    print(net.inp.grad)
-    print(net.hid.grad)
+    print('net.inp.weight after backward')
+    print(net.inp.weight)
+ #   print(net.inp.weight.grad)
 
     # sample backprop otpmizer
     import torch.optim as optim
@@ -332,17 +343,19 @@ def test_pytorch_nn_gaga():
         if (epoch % 100 == 0):
             print('Epoch %s MSE %s' % (epoch, loss))
 
-    print('net.inp.grad & net.hid.grad after GD loops')
-    print(net.inp.grad)
-    print(net.hid.grad)
+    print('net.inp.weight after gradient descent')
+    print(net.inp.weight)
+  #  print(net.inp.weight.grad)
     print ('--training done---')
 
-    print('--test start---')
-    test_input = torch.randn(1, 1, 500, 1)  # initial dummy input
-    print ('input',test_input)
-    print ('output/prediction',net.forward(test_input))   # returns activation
+    test_res = net.forward(test_input)
+    test_res_round = test_res.round()
+    test_diff = test_res_round - test_target
+    print ('output/prediction', test_res)  
+    print ('output/prediction', test_res_round)  
+    print ('expected output', test_target)  
+    print ('err / total, %', test_diff.abs().sum().item(), len(test_diff),(len(test_diff)- test_diff.abs().sum().item()) / (len(test_diff)))
 
-print ('--------------')
 test_pytorch_nn_gaga()
 #test_pytorch_nn()
 #print('--------------******-----------')
