@@ -334,13 +334,13 @@ def test_pytorch_nn_gaga():
     optimizer = optim.SGD(net.parameters(), lr=0.01) # learning rate 0.01 / for each parameter matrix
 
     # in your training loop:
-    for epoch in range(500):
+    for epoch in range(2500):
         optimizer.zero_grad()   # zero the gradient buffers
         output = net(input)
         loss = criterion(output, target)
         loss.backward()
         optimizer.step()    # Does the update
-        if (epoch % 100 == 0):
+        if (epoch % 250 == 0):
             print('Epoch %s MSE %s' % (epoch, loss))
 
     print('net.inp.weight after gradient descent')
@@ -351,9 +351,9 @@ def test_pytorch_nn_gaga():
     test_res = net.forward(test_input)
     test_res_round = test_res.round()
     test_diff = test_res_round - test_target
-    print ('output/prediction', test_res)  
-    print ('output/prediction', test_res_round)  
-    print ('expected output', test_target)  
+    print ('output/prediction', test_res.view(1,-1))  
+    print ('output/prediction', test_res_round.view(1,-1))  
+    print ('expected output', test_target.view(1,-1))  
     print ('err / total, %', test_diff.abs().sum().item(), len(test_diff),(len(test_diff)- test_diff.abs().sum().item()) / (len(test_diff)))
 
 test_pytorch_nn_gaga()
