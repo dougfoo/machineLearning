@@ -143,18 +143,15 @@ class Net(nn.Module):
             num_features *= s
         return num_features
 
-# extends Net w/ fc internal model 500:20:2 model, using sigmoid
+# extends Net w/ fc internal model 500:20:1 model, using sigmoid
 class GagaNet(nn.Module):
     def __init__(self):
         super(GagaNet, self).__init__()
-        self.inp = nn.Linear(500, 20)
-        self.hid = nn.Linear(20, 2)
+        self.inp = nn.Linear(500, 20, bias=False)
+        self.hid = nn.Linear(20, 1, bias=False)
 
-    # forward prop
+    # forward prop -wrap both steps in sigmoid
     def forward(self, x):
-        # Max pooling over a (2, 2) window
-        x = self.inp(x)
-        x = tfun.sigmoid(self.inp(x))
-        x = self.hid(x)
+        x = tfun.sigmoid(self.inp(x))  # oddly works better w/o this sigmoid
         x = tfun.sigmoid(self.hid(x))
         return x

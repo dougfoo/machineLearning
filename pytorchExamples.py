@@ -294,8 +294,8 @@ def test_pytorch_nn():
     print ('output/prediction',net.forward(test_input))   # returns activation
 
 # apply higher level nn.Net lib to text
-def test_pytorch_nn_gaga():
-    torch.set_printoptions(threshold=10)
+def test_pytorch_nn_gaga(t=1000):
+    torch.set_printoptions(threshold=20, edgeitems=7)
     net = GagaNet()
     print(net) # print structure
 
@@ -316,7 +316,6 @@ def test_pytorch_nn_gaga():
     test_target =torch.tensor(testY, dtype=torch.float).view(-1,1)
 
     criterion = nn.MSELoss()
-
     output = net(input)
     loss = criterion(output, target)
     print('loss tree',loss)
@@ -345,18 +344,24 @@ def test_pytorch_nn_gaga():
 
     print('net.inp.weight after gradient descent')
     print(net.inp.weight)
-  #  print(net.inp.weight.grad)
     print ('--training done---')
 
     test_res = net.forward(test_input)
     test_res_round = test_res.round()
     test_diff = test_res_round - test_target
-    print ('output/prediction', test_res.view(1,-1))  
-    print ('output/prediction', test_res_round.view(1,-1))  
+    print ('output', test_res.view(1,-1))  
+    print ('output rounded', test_res_round.view(1,-1))  
     print ('expected output', test_target.view(1,-1))  
     print ('err / total, %', test_diff.abs().sum().item(), len(test_diff),(len(test_diff)- test_diff.abs().sum().item()) / (len(test_diff)))
 
-test_pytorch_nn_gaga()
+import argparse
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('-t', help='batch size', type=int)
+args = vars(parser.parse_args())
+
+_t = args['t']
+
+test_pytorch_nn_gaga(_t)
 #test_pytorch_nn()
 #print('--------------******-----------')
 #test_gaga_nn_auto()
