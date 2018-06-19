@@ -5,6 +5,7 @@ import logging as log
 import sympy as sp
 import pandas as pd
 import numpy as np
+from sklearn.utils import shuffle
 
 #return in array with original result in [0], timing in [1] -- 
 def time_fn( fn, *args, **kwargs ):
@@ -41,7 +42,7 @@ def setupBrainData(max=1000):
     return df.head(max)
 
 # copied code from meng - pull in songclass/* lady gaga/class music text data, returns (training[][],yarr[],labels[],fnames[])
-def getGagaData(maxrows=200,maxfeatures=4000,gtype=None,stopwords=None):
+def getGagaData(maxrows=200,maxfeatures=4000,gtype=None,stopwords=None,shuffle_=False):
     import random, sklearn, sklearn.feature_extraction.text, sklearn.naive_bayes
     def append_data(ds,dir,label,size):
         filenames=os.listdir(dir)
@@ -71,6 +72,11 @@ def getGagaData(maxrows=200,maxfeatures=4000,gtype=None,stopwords=None):
     if (maxfeatures > len(data[0])):
         maxfeatures = len(data[0]) 
     data = data[:,0:maxfeatures]
+
+    if (shuffle_==True):        
+        data = shuffle(data, random_state=0)
+        yArr = shuffle(yarr, random_state=0)
+
     return data,yarr,features,fnames
 
 #replicate/grow data
