@@ -14,3 +14,4 @@ c = Clazz()
 print('class',c)
 c.foo()
 c('test')
+
