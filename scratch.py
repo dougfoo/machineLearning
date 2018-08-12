@@ -1,16 +1,19 @@
+import torch
 
-class Clazz(object):
+class M(torch.nn.Module):
     def __init__(self):
-        print ('__init__',self)
+        super().__init__()
+        self.B = torch.nn.Parameter(torch.Tensor())
 
-    def foo(self):
-        print('Clazz::foo')
+class A(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.m = M()
 
-    def __call__(self, a):
-        print('Clazz:call', a)
+import myutils
+import pandas
 
-print('start')
-c = Clazz()
-print('class',c)
-c.foo()
-c('test')
+pd = myutils.get_gaga_as_pandas_datasets()
+pd[0].to_csv("gaga_pandas_train.csv")
+pd[1].to_csv("gaga_pandas_test.csv")
+
