@@ -25,6 +25,6 @@ These are trained on the [MNIST dataset](http://yann.lecun.com/exdb/mnist/), and
 - [TensorFlow Notebook](https://github.com/diegoalejogm/gans/blob/master/Vanilla%20GAN%20TensorFlow.ipynb)
 
 ## Random Frameworks
-    [Sony NN Console - not so impressive](http://dl.sony.com)
-    [Azure ML STudio - quite impressive](https://studio.azureml.net/)
-    [Sagemaker not bad](https://aws.amazon.com/sagemaker/)
+- [Sony NN Console - not so impressive](http://dl.sony.com/)
+- [Azure ML STudio - quite impressive](https://studio.azureml.net/)
+- [Sagemaker not bad](https://aws.amazon.com/sagemaker/)
