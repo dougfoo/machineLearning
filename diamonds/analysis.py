@@ -10,5 +10,7 @@ FILE_NAME = 'diamonds.csv'
 data_path = os.path.join(DATA_DIR, FILE_NAME)
 diamonds = pd.read_csv(data_path)
 print(diamonds.shape)
+print(diamonds.describe())
 
 
+print (diamonds.loc[diamonds['x']==0])
