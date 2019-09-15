@@ -7,7 +7,7 @@ import numpy as np
 
 ## myutils
 
-def run_linear2(data, target, norm=False):
+def run_linear2(data, target, norm=False, viz=True, log=True):
     # Split the targets into training/testing sets
     y_train = target[:-20]
     y_test = target[-20:]
@@ -29,24 +29,28 @@ def run_linear2(data, target, norm=False):
     print('Score: ', regr.score(X_test, y_test))
     
     # The coefficients
-    coeff_df = pd.DataFrame(regr.coef_.T, X_train.columns, columns=['Coefficient'])  
-    coeff_df.plot(kind='bar')
-    plt.show()
+    if (viz):
+        coeff_df = pd.DataFrame(regr.coef_.T, X_train.columns, columns=['Coefficient'])  
+        coeff_df.plot(kind='bar')
+        plt.show()
     
     # The mean squared error
-    print("Mean squared error: %.2f"
-          % mean_squared_error(y_test, y_pred))
-    # Explained variance score: 1 is perfect prediction
-    print('Variance score: %.2f' % r2_score(y_test, y_pred))
+    if (log):
+        print("Mean squared error: %.2f"% mean_squared_error(y_test, y_pred))
+        # Explained variance score: 1 is perfect prediction
+        print('Variance score: %.2f' % r2_score(y_test, y_pred))
+        print (X_test.sample(n=2,random_state=1))
 
-    print (X_test.sample(n=2,random_state=1))
     f = y_test.sample(n=7,random_state=1)
     g = pd.DataFrame(data=y_pred, columns=['actual']).sample(n=7,random_state=1)
-    g['predict'] = f.values
+    g['predict'] = f.values 
     g['diff'] = g['actual'] - g['predict']
     g['diff%'] = (abs(g['actual'] - g['predict'] ) / abs(g['actual'])) * 100
-    print (g)
-    print (y_test.describe())
+
+    if (log):
+        print (g)
+        print (y_test.describe())
     
+    return regr
 
 
