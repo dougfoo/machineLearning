@@ -2,6 +2,7 @@ import csv
 import json
 import pandas as pd
 import re
+import time
 import requests
 import argparse
 import warnings
@@ -28,6 +29,7 @@ def diamonds(params):
     while True:
         response = requests.get(url, params, cookies=landing_page.cookies)
         print ('response',response, response.headers)
+        print (response.request.url)
         d = json.loads(response.text)
         last_page = params['pageSize'] >= d['countRaw']
 
@@ -57,6 +59,8 @@ def diamonds(params):
                     writer.writerow(row.values())
             print('writeFile',writeFile)
             counter += 1 
+            print ('sleeping ...  for next loop')
+            time.sleep(60 * 3)  # 3min per iteration
     return result
 
 def clean(data):
