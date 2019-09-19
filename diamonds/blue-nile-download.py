@@ -1,4 +1,5 @@
 import csv
+import datetime
 import json
 import pandas as pd
 import re
@@ -26,10 +27,24 @@ def diamonds(params):
     url = 'http://www.bluenile.com/api/public/diamond-search-grid/v2'
     result = []
     counter = 0
+    restartCounter = 0
     while True:
         response = requests.get(url, params, cookies=landing_page.cookies)
         print ('response',response, response.headers)
         print (response.request.url)
+
+        if (response.ok == False):
+            print('response failed, retry same again after big wait', datetime.datetime.now())
+            with open('interim-result'+str(restartCounter)+'.csv', 'w') as f:
+                writer = csv.writer(f)
+                writer.writerows(result[0].keys()) # header
+                for row in result:                 # details
+                    writer.writerow(row.values())
+            print('writeFile',f)
+            time.sleep(60 * 30)  # n-min per iteration after a fail
+            restartCounter += 1
+            next
+
         d = json.loads(response.text)
         last_page = params['pageSize'] >= d['countRaw']
 
@@ -57,10 +72,10 @@ def diamonds(params):
                 writer.writerow(result[0].keys())  # header
                 for row in result:                 # details
                     writer.writerow(row.values())
-            print('writeFile',writeFile)
+            print('writeFile: ',writeFile.name)
             counter += 1 
-            print ('sleeping ...  for next loop')
-            time.sleep(60 * 3)  # 3min per iteration
+            print ('sleeping ...  for next loop ', datetime.datetime.now())
+            time.sleep(60 * 4)  # n-min per iteration
     return result
 
 def clean(data):
