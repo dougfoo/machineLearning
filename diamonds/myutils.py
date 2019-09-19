@@ -6,6 +6,15 @@ import pandas as pd
 import numpy as np
 
 ## myutils
+# cleanup the cols embedded w/ arrays
+def cleanBracketsToF(x):
+    return float(cleanBracketsToS(x))
+
+def cleanBracketsToS(x):
+    return x.replace("['",'').replace("']",'')
+
+def cleanCut(str):
+    return str[str.index('label') + 9: str.index('labelSmall')-4]
 
 def run_linear2(data, target, norm=False, viz=True, log=True):
     # Split the targets into training/testing sets
