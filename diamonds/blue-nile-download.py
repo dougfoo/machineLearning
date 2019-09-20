@@ -29,7 +29,13 @@ def diamonds(params):
     counter = 0
     restartCounter = 0
     while True:
-        response = requests.get(url, params, cookies=landing_page.cookies)
+        try:
+            response = requests.get(url, params, cookies=landing_page.cookies)
+        except:
+            print ('caught major fetch exception', datetime.datetime.now())
+            time.sleep(60 * 30)  # n-min per iteration
+            next
+
         print ('response',response, response.headers)
         print (response.request.url)
 
