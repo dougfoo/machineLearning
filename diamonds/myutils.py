@@ -35,7 +35,8 @@ def run_linear2(data, target, norm=False, viz=True, log=True):
     y_pred = regr.predict(X_test)
 
     # Score ?
-    print('Score: ', regr.score(X_test, y_test))
+    r2score = regr.score(X_test, y_test)
+    print('Score: ', r2score)
     
     # The coefficients
     if (viz):
@@ -61,5 +62,43 @@ def run_linear2(data, target, norm=False, viz=True, log=True):
         print (y_test.describe())
     
     return regr
+
+def run_linear3(X_train, y_train, X_test, y_test, norm=False, viz=True, log=True):
+    # Create linear regression object
+    regr = linear_model.LinearRegression(normalize=norm)
+
+    # Train the model using the training sets
+    regr.fit(X_train, y_train)
+
+    # Make predictions using the testing set
+    y_pred = regr.predict(X_test)
+
+    # Score ?
+    r2score = regr.score(X_test, y_test)
+    print('Score: ', r2score)
+    
+    # The coefficients
+    if (viz):
+        coeff_df = pd.DataFrame(regr.coef_.T, X_train.columns, columns=['Coefficient'])  
+        coeff_df.plot(kind='bar')
+        plt.show()
+    
+    # The mean squared error
+    if (log):
+        print('Mean squared error: %.2f' % mean_squared_error(y_test, y_pred))
+        print('R2 Variance score: %.2f' % r2_score(y_test, y_pred))
+        print (X_test.sample(n=2,random_state=1))
+
+    f = y_test.sample(n=7,random_state=1)
+    g = pd.DataFrame(data=y_pred, columns=['actual']).sample(n=7,random_state=1)
+    g['predict'] = f.values 
+    g['diff'] = g['actual'] - g['predict']
+    g['diff%'] = (abs(g['actual'] - g['predict'] ) / abs(g['actual'])) * 100
+
+    if (log):
+        print (g)
+        print (y_test.describe())
+    
+    return regr, r2score
 
 
