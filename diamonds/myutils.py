@@ -76,7 +76,7 @@ def run_linear3(X_train, y_train, X_test, y_test, norm=False, viz=True, log=True
     # Score ?
     r2score = regr.score(X_test, y_test)
     print('Score: ', r2score)
-    
+
     # The coefficients
     if (viz):
         coeff_df = pd.DataFrame(regr.coef_.T, X_train.columns, columns=['Coefficient'])  
@@ -85,13 +85,15 @@ def run_linear3(X_train, y_train, X_test, y_test, norm=False, viz=True, log=True
     
     # The mean squared error
     if (log):
+        print('coefficients:', regr.coef_)
+        print('intercept:',regr.intercept_)
         print('Mean squared error: %.2f' % mean_squared_error(y_test, y_pred))
         print('R2 Variance score: %.2f' % r2_score(y_test, y_pred))
         print (X_test.sample(n=2,random_state=1))
 
-    f = y_test.sample(n=7,random_state=1)
-    g = pd.DataFrame(data=y_pred, columns=['actual']).sample(n=7,random_state=1)
-    g['predict'] = f.values 
+    g = pd.DataFrame()
+    g['actual'] = y_test.sample(n=7,random_state=1)
+    g['predict'] = pd.DataFrame(data=y_pred, index=y_test.index).sample(n=7,random_state=1)
     g['diff'] = g['actual'] - g['predict']
     g['diff%'] = (abs(g['actual'] - g['predict'] ) / abs(g['actual'])) * 100
 
