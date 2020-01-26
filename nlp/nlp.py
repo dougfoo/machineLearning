@@ -2,6 +2,7 @@ import re
 import unidecode
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 
 
@@ -68,18 +69,17 @@ class FooNLP(object):
         headers = tv.get_feature_names()
         return headers, matrix
 
+    def cosine_sim(self, texts):
+        tv = TfidfVectorizer(min_df=0.0, max_df=1.0, use_idf=True)
+        tm = tv.fit_transform(texts)
+        sm = cosine_similarity(tm)
+        return sm
+
 
 if __name__ == "__main__":
     nlp = FooNLP()
     sentences = ['The indian life of the indian pi', 'The life and pain of the french fiancée', 'my life my death my pain']
-    (h, m) = nlp.tfidf(sentences)
-    df = pd.DataFrame(m, columns=h)
     print(sentences)
-    print(df)
-    print(df['indian'].sum() )
-    print(df['death'].sum() )
-    print(df['the'].sum() )
-    print(df['life'].sum() )
-    # print(df['the indian'].sum() )
-    # print(df['the indian pi'].sum() )
+    sm = nlp.cosine_sim(sentences)
+    print(sm)
     
