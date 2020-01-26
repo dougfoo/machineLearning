@@ -1,5 +1,8 @@
 import re
 import unidecode
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+import pandas as pd
 
 
 class FooNLP(object):
@@ -50,8 +53,33 @@ class FooNLP(object):
         toks = text.split(' ')
         return [t.strip() for t in toks if t != '']
 
+    def bag_of_words(self, texts, ngram_min=1, ngram_max=1):
+        cv = CountVectorizer(min_df=0.0, max_df=1.0, ngram_range=(ngram_min, ngram_max))
+        cm = cv.fit_transform(texts)
+        matrix = cm.toarray()
+        headers = cv.get_feature_names()
+        return headers, matrix
+
+    def tfidf(self, texts):
+        tv = TfidfVectorizer(min_df=0.0, max_df=1.0, use_idf=True)
+        tm = tv.fit_transform(texts)
+        matrix = tm.toarray()
+
+        headers = tv.get_feature_names()
+        return headers, matrix
+
 
 if __name__ == "__main__":
     nlp = FooNLP()
-    assert nlp.clean("The life of π") == "the life of"
-    assert nlp.clean("my fiancée") == "my fiancee"
+    sentences = ['The indian life of the indian pi', 'The life and pain of the french fiancée', 'my life my death my pain']
+    (h, m) = nlp.tfidf(sentences)
+    df = pd.DataFrame(m, columns=h)
+    print(sentences)
+    print(df)
+    print(df['indian'].sum() )
+    print(df['death'].sum() )
+    print(df['the'].sum() )
+    print(df['life'].sum() )
+    # print(df['the indian'].sum() )
+    # print(df['the indian pi'].sum() )
+    

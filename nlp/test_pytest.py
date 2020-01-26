@@ -1,4 +1,5 @@
 from nlp import FooNLP
+import pandas as pd
 
 test_inputs = [
     "The life  of π",
@@ -40,7 +41,35 @@ def test_lemmitize():
     assert nlp.lemmitize('worked at happening places') == 'work at happen place'
 
 
+def test_bag_of_words():
+    nlp = FooNLP()
+    sentences = ['The indian life of the indian pi', 'The life and pain of the french fiancée', 'my life my death my pain']
+    (h, m) = nlp.bag_of_words(sentences)
+    df = pd.DataFrame(m, columns=h)
+    print(sentences)
+    print(df)
+    assert df['indian'].sum() == 2
+    assert df['death'].sum() == 1
+    assert df['the'].sum() == 4
+    assert df['life'].sum() == 3
+    assert df['the indian'].sum() == 2
+    assert df['the indian pi'].sum() == 1
+
+
+def test_tfidf():
+    nlp = FooNLP()
+    sentences = ['The indian life of the indian pi', 'The life and pain of the french fiancée', 'my life my death my pain']
+    (h, m) = nlp.tfidf(sentences)
+    df = pd.DataFrame(m, columns=h)
+    print(sentences)
+    print(df)
+    assert round(df['indian'].sum(),2) == 0.70
+    assert round(df['death'].sum(),2) == 0.30
+    assert round(df['the'].sum(),2) == 1.11
+    assert round(df['life'].sum(),2) == 0.61
+
+
 def test_all():
-    for input,output in zip(test_inputs, clean_outputs):
+    for input, output in zip(test_inputs, clean_outputs):
         nlp = FooNLP(input)
         assert nlp.cleaned_txt == output

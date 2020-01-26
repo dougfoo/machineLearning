@@ -5,6 +5,14 @@
     "python.testing.pytestArgs": [
         "."
     ],
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "--show-capture",
+        ".",
+        "-p",
+        "*test*.py"
+    ],
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestEnabled": true,
