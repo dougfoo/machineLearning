@@ -3,3 +3,4 @@ __pycache__/*
 tf_logs/*
 .ipynb_checkpoints/*
 .vscode/settings.json
+.pytest_cache/*
