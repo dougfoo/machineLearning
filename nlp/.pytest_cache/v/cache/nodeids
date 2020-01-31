@@ -1,3 +1,9 @@
 [
-  "test_pytest.py::test_tfidf"
+  "test_pytest.py::test_clean",
+  "test_pytest.py::test_destop",
+  "test_pytest.py::test_tokenize",
+  "test_pytest.py::test_lemmitize",
+  "test_pytest.py::test_bag_of_words",
+  "test_pytest.py::test_tfidf",
+  "test_pytest.py::test_all"
 ]
