@@ -80,6 +80,7 @@ class FooNLP(object):
         return sm
 
     def train_naivebayes(self):
+        "'"
         # load
         df_dictionary = pd.read_table('stanfordSentimentTreebank/dictionary_sm.txt', delimiter='|')
         df_labels = pd.read_table('stanfordSentimentTreebank/sentiment_labels_sm.txt', delimiter='|')
