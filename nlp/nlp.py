@@ -15,7 +15,7 @@ class FooModel(object):
     def embed(self, texts):
         self.matrix = self.embedding.fit_transform(texts)
         self.headers = self.embedding.get_feature_names()
-        return self.matrix
+        return self.matrix, self.headers
 
     def train(self, X, y):
         self.mod.fit(X, y)
@@ -38,11 +38,6 @@ class FooNLP(object):
     def __init__(self, model=FooModel(), stoplist=STOPLIST):
         self.model = model
         self.stoplist = stoplist
-
-    def set_text(self, txt):
-        self.original_txt = txt
-        self.cleaned_txt = self.full_proc(txt)
-        self.cleaned_tokens = self.tokenize(self.cleaned_txt)
 
     def full_proc(self, text):
         text = self.expand(text)
@@ -67,14 +62,17 @@ class FooNLP(object):
         return text
 
     def lemmitize(self, text):
-        toks = self.tokenize(text)
-        return " ".join([self.lemmitize_word(x) for x in toks])
+        toks = self.tokenize(text)        
+        for i, word in enumerate(toks):
+            if (len(word) > 4):
+                word = re.sub(r"ing\b", '', word, re.I | re.A)
+                word = re.sub(r"ed\b", '', word, re.I | re.A)
+                word = re.sub(r"s\b", '', word, re.I | re.A)
+                toks[i] = word
+
+        return " ".join(toks)
 
     def lemmitize_word(self, text):   # not such a good way, complexity merits using nltk lib
-        if (len(text) > 4):
-            text = re.sub(r"ing\b", '', text, re.I | re.A)
-            text = re.sub(r"ed\b", '', text, re.I | re.A)
-            text = re.sub(r"s\b", '', text, re.I | re.A)
         return text
 
     def destop(self, text,):
@@ -85,11 +83,11 @@ class FooNLP(object):
         toks = text.split(' ')
         return [t.strip() for t in toks if t != '']
 
-    def make_embeddings(self, text):
-        return self.model.embed(text)
-
     def encode(self, texts):
         return self.model.embedding.transform(texts)
+
+    def make_embeddings(self, text):
+        return self.model.embed(text)
 
     def train(self, dictionary_file, label_file):
         # load
@@ -105,7 +103,7 @@ class FooNLP(object):
         df_merged['text'] = df_merged['text'].apply(lambda row: self.full_proc(row))
 
         # turn into embeddings
-        onehot_dictionary = self.make_embeddings(df_merged['text'].tolist())
+        onehot_dictionary, headers = self.make_embeddings(df_merged['text'].tolist())
 
         # split sets
         X_train, X_test, y_train, y_test = train_test_split(onehot_dictionary, df_merged['labels'].astype(str), test_size=0.30, random_state=1)
@@ -113,6 +111,12 @@ class FooNLP(object):
         self.model.train(X_train, y_train)
         self.model.score(X_test, y_test)
         return self.model
+    
+    def predict(self, X):
+        return self.model.predict(X)
+
+    def score(self, X, y):
+        return self.model.score(X,y)
 
 
 if __name__ == "__main__":
