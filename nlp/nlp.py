@@ -14,22 +14,22 @@ class FooModel(object):
         self.embedding = embedding()
         self.mod = mod()
 
-    def embed(self, texts):
+    def __repr__(self):
+        return 'FooModel '+str(type(self.mod))+', '+str(type(self.embedding))
+
+    def embed(self, texts) -> ([],[]):
         self.matrix = self.embedding.fit_transform(texts)
         self.headers = self.embedding.get_feature_names()
         return self.matrix, self.headers
 
-    def train(self, X, y):
+    def train(self, X, y) -> None:
         self.mod.fit(X, y)
-        print(self.mod)
 
-    def score(self, X, y):
-        res = self.mod.score(X, y)
-        return res
+    def score(self, X, y) -> float:
+        return self.mod.score(X, y)
 
-    def predict(self, X):
-        pred = self.mod.predict(X)
-        return pred
+    def predict(self, X) -> ([str],[float]):
+        return self.mod.predict(X), self.mod.predict_proba(X)
 
 
 class FooNLP(object):
@@ -39,21 +39,24 @@ class FooNLP(object):
         self.model = model
         self.stoplist = stoplist
 
-    def full_proc(self, text):
+    def __repr__(self):
+        return 'FooNLP: '+self.corpus +', '+str(type(self.model))
+
+    def full_proc(self, text) -> str:
         text = self.expand(text)
         text = self.clean(text)
         text = self.lemmitize(text)
         text = self.destop(text)
         return text
 
-    def clean(self, text):
+    def clean(self, text) -> str:
         text = unidecode.unidecode(text)  # clean accents
         text = re.sub(r'[^a-zA-Z\s]', '', text, re.I | re.A)
         text = text.lower()
         text = text.strip()
         return text
 
-    def expand(self, text):
+    def expand(self, text) -> str:
         text = re.sub(r"i'd", 'i would', text, re.I | re.A)
         text = re.sub(r"i've", 'i have', text, re.I | re.A)
         text = re.sub(r"you've", 'you would', text, re.I | re.A)
@@ -61,7 +64,7 @@ class FooNLP(object):
         text = re.sub(r"doesn't", 'does not', text, re.I | re.A)
         return text
 
-    def lemmitize(self, text):
+    def lemmitize(self, text) -> str:
         toks = self.tokenize(text)        
         for i, word in enumerate(toks):
             if (len(word) > 4):
@@ -72,31 +75,32 @@ class FooNLP(object):
 
         return " ".join(toks)
 
-    def lemmitize_word(self, text):   # not such a good way, complexity merits using nltk lib
+    def lemmitize_word(self, text) -> str:   # not such a good way, complexity merits using nltk lib
         return text
 
-    def destop(self, text,):
+    def destop(self, text,) -> str:
         words = self.tokenize(text)
         return " ".join([x for x in words if x not in self.stoplist])
 
-    def tokenize(self, text):
+    def tokenize(self, text) -> [str]:
         toks = text.split(' ')
         return [t.strip() for t in toks if t != '']
 
-    def encode(self, texts):
+    def encode(self, texts) -> []:
         return self.model.embedding.transform(texts)
 
-    def make_embeddings(self, text):
+    def make_embeddings(self, text) -> ([],[]):
         return self.model.embed(text)
 
-    def load_train_stanford(self, samplesize=239232):        
+    def load_train_stanford(self, samplesize=239232) -> object:
+        self.corpus = 'stanford'
         dictfile = 'stanfordSentimentTreebank/dictionary.txt'
         labelfile = 'stanfordSentimentTreebank/sentiment_labels.txt'
 
         df_dictionary = pd.read_table(dictfile, delimiter='|').sample(samplesize, random_state=5)
         df_labels = pd.read_table(labelfile, delimiter='|').sample(samplesize, random_state=5)
         df_merged = pd.merge(left=df_dictionary, right=df_labels, left_on='id', right_on='id')
-        print('merged to dict size: %d'%len(df_merged))
+        print('merged to corpus size: %d'%len(df_merged))
 
         # labels need to be changed from float 0.0->1.0 to 5 classes labelea -2,-1,0,1,2 or some strings
         df_merged['labels'] = pd.cut(df_merged['sentiment'], [0.0,0.2,0.4,0.6,0.8,1.1], labels=["real bad", "bad", "medium", "good","real good"])
@@ -111,13 +115,13 @@ class FooNLP(object):
         X_train, X_test, y_train, y_test = train_test_split(onehot_dictionary, df_merged['labels'].astype(str), test_size=0.30, random_state=1)
 
         self.model.train(X_train, y_train)
-        print(self.model.score(X_test, y_test))
+        print('trained test score: ', self.model, self.model.score(X_test, y_test))
         return self.model
     
-    def predict(self, X):
+    def predict(self, X) -> ([str],[float]):
         return self.model.predict(X)
 
-    def score(self, X, y):
+    def score(self, X, y) -> float:
         return self.model.score(X,y)
 
 
@@ -130,17 +134,31 @@ if __name__ == "__main__":
     smodel2 = nlp2.load_train_stanford()
     smodel3 = nlp3.load_train_stanford()
     sents = ['I enjoy happy i love it superstar sunshine','I hate kill die horrible','Do you love or hate me?']
-    encoded_sents = nlp.encode(sents)
-    encoded_sents2 = nlp2.encode(sents)
-    encoded_sents3 = nlp3.encode(sents)
+    encoded_vect = nlp.encode(sents)
+    encoded_tfid = nlp2.encode(sents)
 
-    print(smodel)
-    print(encoded_sents)
-    print(encoded_sents2)
-    print(encoded_sents3)
     print(sents)
-    print(smodel.headers)
-    print(smodel.predict(encoded_sents))
-    print(smodel2.predict(encoded_sents2))
-    print(smodel3.predict(encoded_sents3))
+    print(encoded_vect)
+    print(encoded_tfid)
+
+    # print(smodel.headers)
+    print(smodel, smodel.predict(encoded_vect))
+    print(smodel2, smodel2.predict(encoded_tfid))
+    print(smodel3, smodel3.predict(encoded_vect))
+
+    print('ready for inputs, type ^C or empty line to break out')
+
+    while True:
+        txt = input('Enter Text> ')
+        if (txt == ''):
+            print('quitting see ya')
+            break
+        encoded_vect = nlp.encode([txt])
+        encoded_tfid = nlp2.encode([txt])
+
+        print(smodel.predict(encoded_vect), smodel)
+        print(smodel2.predict(encoded_tfid), smodel2)
+        print(smodel3.predict(encoded_vect), smodel3)
+
+
 
