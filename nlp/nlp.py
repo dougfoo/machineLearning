@@ -5,6 +5,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import LogisticRegression
+
 import pandas as pd
 
 class FooModel(object):
@@ -23,12 +25,10 @@ class FooModel(object):
 
     def score(self, X, y):
         res = self.mod.score(X, y)
-        print('train->test score: ', res)
         return res
 
     def predict(self, X):
         pred = self.mod.predict(X)
-        print('predict: ', pred)
         return pred
 
 
@@ -89,10 +89,12 @@ class FooNLP(object):
     def make_embeddings(self, text):
         return self.model.embed(text)
 
-    def train(self, dictionary_file, label_file):
-        # load
-        df_dictionary = pd.read_table(dictionary_file, delimiter='|')
-        df_labels = pd.read_table(label_file, delimiter='|')
+    def load_train_stanford(self, samplesize=239232):        
+        dictfile = 'stanfordSentimentTreebank/dictionary.txt'
+        labelfile = 'stanfordSentimentTreebank/sentiment_labels.txt'
+
+        df_dictionary = pd.read_table(dictfile, delimiter='|').sample(samplesize, random_state=5)
+        df_labels = pd.read_table(labelfile, delimiter='|').sample(samplesize, random_state=5)
         df_merged = pd.merge(left=df_dictionary, right=df_labels, left_on='id', right_on='id')
         print('merged to dict size: %d'%len(df_merged))
 
@@ -109,7 +111,7 @@ class FooNLP(object):
         X_train, X_test, y_train, y_test = train_test_split(onehot_dictionary, df_merged['labels'].astype(str), test_size=0.30, random_state=1)
 
         self.model.train(X_train, y_train)
-        self.model.score(X_test, y_test)
+        print(self.model.score(X_test, y_test))
         return self.model
     
     def predict(self, X):
@@ -121,19 +123,24 @@ class FooNLP(object):
 
 if __name__ == "__main__":
     nlp = FooNLP()
-    sentences = ['The indian life of the indian pi', 'The life and pain of the french fiancée', 'my life my death my pain']
-    print(sentences)
+    nlp2 = FooNLP(model=FooModel(TfidfVectorizer))
+    nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))
 
-    dictfile = 'stanfordSentimentTreebank/dictionary.txt'
-    labelfile = 'stanfordSentimentTreebank/sentiment_labels.txt'
-
-    model = nlp.train(dictfile, labelfile)
-
-    sents = ['I am so happy i love it super','I hate kill die horrible','Do you love or hate me?']
+    smodel = nlp.load_train_stanford()
+    smodel2 = nlp2.load_train_stanford()
+    smodel3 = nlp3.load_train_stanford()
+    sents = ['I enjoy happy i love it superstar sunshine','I hate kill die horrible','Do you love or hate me?']
     encoded_sents = nlp.encode(sents)
+    encoded_sents2 = nlp2.encode(sents)
+    encoded_sents3 = nlp3.encode(sents)
 
-    print(model)
-    print(sents)
+    print(smodel)
     print(encoded_sents)
-    print(model.predict(encoded_sents))
+    print(encoded_sents2)
+    print(encoded_sents3)
+    print(sents)
+    print(smodel.headers)
+    print(smodel.predict(encoded_sents))
+    print(smodel2.predict(encoded_sents2))
+    print(smodel3.predict(encoded_sents3))
 

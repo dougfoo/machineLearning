@@ -75,3 +75,24 @@ def test_all():
     for input, output in zip(test_inputs, clean_outputs):
         nlp = FooNLP()
         assert nlp.full_proc(input) == output
+
+def test_stanford_countv():
+    nlp = FooNLP()
+    smodel = nlp.load_train_stanford(5000)
+    sents = ['I am so happy i love it super','I hate kill die horrible','Do you love or hate me?']
+    encoded_sents = nlp.encode(sents)
+    r = smodel.predict(encoded_sents)
+    assert (r[0] == 'bad')
+    assert (r[1] == 'medium')
+    assert (r[2] == 'medium')
+
+def test_stanford_tfidf():
+    nlp = FooNLP(model=FooModel(TfidfVectorizer))
+    smodel = nlp.load_train_stanford(50000)
+    sents = ['I am so happy i love it super','I hate kill die horrible','Do you love or hate me?']
+    encoded_sents = nlp.encode(sents)
+    r = smodel.predict(encoded_sents)
+    assert (r[0] == 'medium')
+    assert (r[1] == 'medium')
+    assert (r[2] == 'medium')
+
