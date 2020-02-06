@@ -32,7 +32,7 @@ class FooModel(object):
         self.mod = mod()
 
     def __repr__(self):
-        return 'FooModel '+str(type(self.mod))+', '+str(type(self.embedding))
+        return 'FooModel: '+str((self.mod.__class__.__name__))+', '+str((self.embedding.__class__.__name__))
 
     def embed(self, texts) -> ([],[]):
         self.matrix = self.embedding.fit_transform(texts)
@@ -45,6 +45,7 @@ class FooModel(object):
     def score(self, X, y) -> float:
         return self.mod.score(X, y)
 
+    @timeit
     def predict(self, X) -> ([str],[float]):
         return self.mod.predict(X), self.mod.predict_proba(X)
 
@@ -57,7 +58,7 @@ class FooNLP(object):
         self.stoplist = stoplist
 
     def __repr__(self):
-        return 'FooNLP: '+self.corpus +', '+str(type(self.model))
+        return 'FooNLP: '+self.corpus+', '+str(self.model)
 
     def full_proc(self, text) -> str:
         text = self.expand(text)
@@ -158,7 +159,6 @@ class FooNLP(object):
         print('trained test score: ', self.model, self.model.score(X_test, y_test))
         return self.model
     
-    @timeit
     def predict(self, X) -> ([str],[float]):
         return self.model.predict(X)
 
@@ -171,9 +171,9 @@ if __name__ == "__main__":
     nlp2 = FooNLP(model=FooModel(TfidfVectorizer))
     nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))
 
-    smodel = nlp.load_train_twitter()
-    smodel2 = nlp2.load_train_twitter()
-    smodel3 = nlp3.load_train_twitter()
+    nlp.load_train_twitter(5000)
+    nlp2.load_train_twitter(5000)
+    nlp3.load_train_twitter(5000)
     sents = ['I enjoy happy i love it superstar sunshine','I hate kill die horrible','Do you love or hate me?']
     encoded_vect = nlp.encode(sents)
     encoded_tfid = nlp2.encode(sents)
@@ -184,9 +184,9 @@ if __name__ == "__main__":
 
     # print(smodel.headers)
 
-    print(smodel, smodel.predict(encoded_vect))
-    print(smodel2, smodel2.predict(encoded_tfid))
-    print(smodel3, smodel3.predict(encoded_vect))
+    print(nlp, nlp.predict(encoded_vect))
+    print(nlp2, nlp2.predict(encoded_tfid))
+    print(nlp3, nlp3.predict(encoded_vect))
 
     print('ready for inputs, type ^C or empty line to break out')
 
@@ -198,9 +198,9 @@ if __name__ == "__main__":
         encoded_vect = nlp.encode([txt])
         encoded_tfid = nlp2.encode([txt])
 
-        print(smodel.predict(encoded_vect), smodel)
-        print(smodel2.predict(encoded_tfid), smodel2)
-        print(smodel3.predict(encoded_vect), smodel3)
+        print(nlp.predict(encoded_vect), nlp)
+        print(nlp2.predict(encoded_tfid), nlp2)
+        print(nlp3.predict(encoded_vect), nlp3)
 
 
 
