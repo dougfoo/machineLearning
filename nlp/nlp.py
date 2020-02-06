@@ -103,7 +103,7 @@ class FooNLP(object):
         print('merged to corpus size: %d'%len(df_merged))
 
         # labels need to be changed from float 0.0->1.0 to 5 classes labelea -2,-1,0,1,2 or some strings
-        df_merged['labels'] = pd.cut(df_merged['sentiment'], [0.0,0.2,0.4,0.6,0.8,1.1], labels=["real bad", "bad", "medium", "good","real good"])
+        df_merged['labels'] = pd.cut(df_merged['sentiment'], [0.0,0.225,0.45,0.55,0.725,1.1], labels=["real bad", "bad", "medium", "good","real good"])
 
         # clean and tokenize
         df_merged['text'] = df_merged['text'].apply(lambda row: self.full_proc(row))
@@ -118,6 +118,28 @@ class FooNLP(object):
         print('trained test score: ', self.model, self.model.score(X_test, y_test))
         return self.model
     
+    # https://www.kaggle.com/kazanova/sentiment140 - 1.6m tweets
+    def load_train_twitter(self, samplesize=1500000) -> object:
+        self.corpus = 'twitter'
+        dictfile = 'twitter/SentimentAnalysisDataset.csv'
+
+        df_merged = pd.read_table(dictfile, delimiter=',', quotechar='"', error_bad_lines=False).sample(samplesize, random_state=5)
+        print('merged to corpus size: %d'%len(df_merged))
+
+        # clean and tokenize
+        df_merged['clean_text'] = df_merged['SentimentText'].apply(lambda row: self.full_proc(row))
+
+        # turn into embeddings
+        onehot_dictionary, headers = self.make_embeddings(df_merged['clean_text'].tolist())
+
+        # split sets
+        X_train, X_test, y_train, y_test = train_test_split(onehot_dictionary, df_merged['Sentiment'].astype(str), test_size=0.30, random_state=1)
+
+        self.model.train(X_train, y_train)
+        print('trained test score: ', self.model, self.model.score(X_test, y_test))
+        return self.model
+    
+
     def predict(self, X) -> ([str],[float]):
         return self.model.predict(X)
 
@@ -126,13 +148,21 @@ class FooNLP(object):
 
 
 if __name__ == "__main__":
+    from timeit import default_timer as timer
+    from datetime import timedelta
+
     nlp = FooNLP()
     nlp2 = FooNLP(model=FooModel(TfidfVectorizer))
     nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))
 
-    smodel = nlp.load_train_stanford()
-    smodel2 = nlp2.load_train_stanford()
-    smodel3 = nlp3.load_train_stanford()
+    start = timer()
+    nlp.load_train_twitter()
+    end = timer()
+    print('train time',timedelta(seconds=end-start))
+
+    smodel = nlp.load_train_twitter()
+    smodel2 = nlp2.load_train_twitter()
+    smodel3 = nlp3.load_train_twitter()
     sents = ['I enjoy happy i love it superstar sunshine','I hate kill die horrible','Do you love or hate me?']
     encoded_vect = nlp.encode(sents)
     encoded_tfid = nlp2.encode(sents)
@@ -142,7 +172,12 @@ if __name__ == "__main__":
     print(encoded_tfid)
 
     # print(smodel.headers)
+
+    start = timer()
     print(smodel, smodel.predict(encoded_vect))
+    end = timer()
+    print('inference time',timedelta(seconds=end-start))
+
     print(smodel2, smodel2.predict(encoded_tfid))
     print(smodel3, smodel3.predict(encoded_vect))
 
