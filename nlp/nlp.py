@@ -8,6 +8,23 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 
 import pandas as pd
+from functools import wraps
+from time import time
+
+
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time()
+        result = method(*args, **kw)
+        te = time()
+        if 'log_time' in kw:
+            name = kw.get('log_name', method.__name__.upper())
+            kw['log_time'][name] = int((te - ts) * 1000)
+        else:
+            print ('%r  %2.2f ms' % \
+                  (method.__name__, (te - ts) * 1000))
+        return result
+    return timed
 
 class FooModel(object):
     def __init__(self, embedding=CountVectorizer, mod=MultinomialNB):
@@ -92,6 +109,7 @@ class FooNLP(object):
     def make_embeddings(self, text) -> ([],[]):
         return self.model.embed(text)
 
+    @timeit
     def load_train_stanford(self, samplesize=239232) -> object:
         self.corpus = 'stanford'
         dictfile = 'stanfordSentimentTreebank/dictionary.txt'
@@ -119,6 +137,7 @@ class FooNLP(object):
         return self.model
     
     # https://www.kaggle.com/kazanova/sentiment140 - 1.6m tweets
+    @timeit
     def load_train_twitter(self, samplesize=1500000) -> object:
         self.corpus = 'twitter'
         dictfile = 'twitter/SentimentAnalysisDataset.csv'
@@ -139,7 +158,7 @@ class FooNLP(object):
         print('trained test score: ', self.model, self.model.score(X_test, y_test))
         return self.model
     
-
+    @timeit
     def predict(self, X) -> ([str],[float]):
         return self.model.predict(X)
 
@@ -148,17 +167,9 @@ class FooNLP(object):
 
 
 if __name__ == "__main__":
-    from timeit import default_timer as timer
-    from datetime import timedelta
-
     nlp = FooNLP()
     nlp2 = FooNLP(model=FooModel(TfidfVectorizer))
     nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))
-
-    start = timer()
-    nlp.load_train_twitter()
-    end = timer()
-    print('train time',timedelta(seconds=end-start))
 
     smodel = nlp.load_train_twitter()
     smodel2 = nlp2.load_train_twitter()
@@ -173,11 +184,7 @@ if __name__ == "__main__":
 
     # print(smodel.headers)
 
-    start = timer()
     print(smodel, smodel.predict(encoded_vect))
-    end = timer()
-    print('inference time',timedelta(seconds=end-start))
-
     print(smodel2, smodel2.predict(encoded_tfid))
     print(smodel3, smodel3.predict(encoded_vect))
 
