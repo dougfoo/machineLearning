@@ -1,6 +1,7 @@
-from nlp import FooNLP, FooModel
+from nlp import FooNLP, FooModel, Embeddings
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import pandas as pd
+
 
 test_inputs = [
     "The life  of π",
@@ -19,6 +20,16 @@ clean_outputs = [
     "do not wanna go on with u like that",
     "fraction is meaningful",
 ]
+
+def test_embeddings():
+    emb = Embeddings()
+    sentences = [['the','sentence','is','red'],['my','sentence','is','blue','zeta'], ['my','sentence','is','not','gamma']]
+    cbow, skip = emb.word2vec(sentences)
+    print(cbow)
+    print(cbow.wv)
+    print(cbow.wv.vocab)
+    print(list(cbow.wv.vocab))
+    print(cbow.wv.similarity('sentence','blue'))
 
 
 def test_clean():

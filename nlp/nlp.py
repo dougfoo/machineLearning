@@ -6,7 +6,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
-
+import gensim
+import nltk
 import pandas as pd
 from functools import wraps
 from time import time
@@ -25,6 +26,20 @@ def timeit(method):
                   (method.__name__, (te - ts) * 1000))
         return result
     return timed
+
+
+class Embeddings(object):
+    def __init__(self):
+        pass
+
+    def word2vec(self, sentences):
+        # Create CBOW model 
+        cbow = gensim.models.Word2Vec(sentences, min_count = 1,  size = 100, window = 5) 
+        # Create SkipGram model 
+        skip = gensim.models.Word2Vec(sentences, min_count = 1, size = 100, window = 5, sg = 1) 
+
+        return cbow, skip
+
 
 class FooModel(object):
     def __init__(self, embedding=CountVectorizer, mod=MultinomialNB):
@@ -171,9 +186,9 @@ if __name__ == "__main__":
     nlp2 = FooNLP(model=FooModel(TfidfVectorizer))
     nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))
 
-    nlp.load_train_twitter(5000)
-    nlp2.load_train_twitter(5000)
-    nlp3.load_train_twitter(5000)
+    nlp.load_train_stanford(5000)
+    nlp2.load_train_stanford(5000)
+    nlp3.load_train_stanford(5000)
     sents = ['I enjoy happy i love it superstar sunshine','I hate kill die horrible','Do you love or hate me?']
     encoded_vect = nlp.encode(sents)
     encoded_tfid = nlp2.encode(sents)
