@@ -1,4 +1,4 @@
-from nlp import FooNLP, FooModel, Embeddings
+from nlp import FooNLP, FooModel, W2VEmbedding
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import pandas as pd
 
@@ -97,13 +97,25 @@ def test_stanford_countv():
     assert (r[1] == 'medium')
     assert (r[2] == 'medium')
 
+
 def test_stanford_tfidf():
     nlp = FooNLP(model=FooModel(TfidfVectorizer))
     smodel = nlp.load_train_stanford(50000)
     sents = ['I am so happy i love it super','I hate kill die horrible','Do you love or hate me?']
     encoded_sents = nlp.encode(sents)
     r,p = smodel.predict(encoded_sents)
-    assert (r[0] == 'medium')
-    assert (r[1] == 'medium')
-    assert (r[2] == 'medium')
+    assert (r[0] == 'good')
+    assert (r[1] == 'good')
+    assert (r[2] == 'good')
+
+
+def test_word2vec():
+    w2v = W2VModel()
+    emb.embed([['the','sentence','is','red'],['my','sentence','is','blue','zeta'], ['my','sentence','is','not','gamma']])
+    avgs = emb.vectors_1d()
+    headers = emb.headers()
+    assert(sorted(headers.keys())[0] == 'blue')
+    assert(len(avgs) == len(headers))
+
+
 

@@ -1,5 +1,6 @@
 import re
 import unidecode
+import statistics
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
@@ -9,6 +10,7 @@ from sklearn.linear_model import LogisticRegression
 import gensim
 import nltk
 import pandas as pd
+import numpy as np
 from functools import wraps
 from time import time
 
@@ -27,22 +29,56 @@ def timeit(method):
         return result
     return timed
 
+class W2VModel(object):
+    """
+    Wrapper for Word2Vec that creates an internal 2d embedding
+    flattened to averages for training and inference
+    """
+    def __init__(self, mod=LogisticRegression):
+        self.mod = mod()
 
-class Embeddings(object):
-    def __init__(self):
-        pass
+    def __repr__(self):
+        return 'FooModel: '+str((self.mod.__class__.__name__))+', '+str((self.embedding.__class__.__name__))
 
-    def word2vec(self, sentences):
-        # Create CBOW model 
-        cbow = gensim.models.Word2Vec(sentences, min_count = 1,  size = 100, window = 5) 
-        # Create SkipGram model 
-        skip = gensim.models.Word2Vec(sentences, min_count = 1, size = 100, window = 5, sg = 1) 
+    def embed(self, texts) -> ([],[]):
+        toks = [t.split(" ") for t in texts]    # embed per phrase
+        self.embedding = gensim.models.Word2Vec(toks, min_count=1,  size=100, window=5)
+        return self.doc_vector(toks)
 
-        return cbow, skip
+    def doc_vector(self, texts) -> ([],[]):
+        v = []
+        h = []
+        for t in texts:
+            doc = [word for word in t if word in self.embedding.wv.vocab]
+            if (len(doc)) == 0:
+                v.append(0.0)
+            else:
+                v.append(np.mean(self.embedding[doc]))
+            h.append(" ".join(doc))
+        return v,h
+
+    def train(self, X, y) -> None:
+        self.mod.fit(np.reshape(X,(-1,1)), y)
+
+    def transform(self, texts) -> []:
+        toks = [t.split(" ") for t in texts]
+        v, h = self.doc_vector(toks)
+        return v
+
+    def score(self, X, y) -> float:
+        return self.mod.score(np.reshape(X,(-1,1)), y)
+
+    @timeit
+    def predict(self, X) -> ([str],[float]):
+        return self.mod.predict(np.reshape(X,(-1,1))), self.mod.predict_proba(np.reshape(X,(-1,1)))
 
 
 class FooModel(object):
-    def __init__(self, embedding=CountVectorizer, mod=MultinomialNB):
+    """
+    Basic container for standard 1d embeddings - CountVectorizer, TfidfVectorizer embeddings
+    Models MultinomialNB, LogisticRegression that have similar input types
+    """
+    def __init__(self, mod=MultinomialNB, embedding=CountVectorizer):
         self.embedding = embedding()
         self.mod = mod()
 
@@ -59,6 +95,9 @@ class FooModel(object):
 
     def score(self, X, y) -> float:
         return self.mod.score(X, y)
+
+    def transform(self, texts) -> []:
+        return self.embedding.transform(texts)
 
     @timeit
     def predict(self, X) -> ([str],[float]):
@@ -120,7 +159,7 @@ class FooNLP(object):
         return [t.strip() for t in toks if t != '']
 
     def encode(self, texts) -> []:
-        return self.model.embedding.transform(texts)
+        return self.model.transform(texts)
 
     def make_embeddings(self, text) -> ([],[]):
         return self.model.embed(text)
@@ -182,26 +221,26 @@ class FooNLP(object):
 
 
 if __name__ == "__main__":
-    nlp = FooNLP()
-    nlp2 = FooNLP(model=FooModel(TfidfVectorizer))
-    nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))
+    nlp = FooNLP(model=W2VModel())   # wv2 + logistic
+    nlp2 = FooNLP(model=FooModel(embedding=TfidfVectorizer) ) # default naive bayes
+    nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))  # default CountVector
 
-    nlp.load_train_stanford(5000)
-    nlp2.load_train_stanford(5000)
-    nlp3.load_train_stanford(5000)
+    nlp.load_train_stanford()
+    nlp2.load_train_stanford()
+    nlp3.load_train_stanford()
     sents = ['I enjoy happy i love it superstar sunshine','I hate kill die horrible','Do you love or hate me?']
-    encoded_vect = nlp.encode(sents)
+    encoded_w2v = nlp.encode(sents)
     encoded_tfid = nlp2.encode(sents)
+    encoded_cv = nlp3.encode(sents)
 
     print(sents)
-    print(encoded_vect)
+    print(encoded_w2v)
     print(encoded_tfid)
+    print(encoded_cv)
 
-    # print(smodel.headers)
-
-    print(nlp, nlp.predict(encoded_vect))
+    print(nlp, nlp.predict(encoded_w2v))
     print(nlp2, nlp2.predict(encoded_tfid))
-    print(nlp3, nlp3.predict(encoded_vect))
+    print(nlp3, nlp3.predict(encoded_cv))
 
     print('ready for inputs, type ^C or empty line to break out')
 
@@ -215,7 +254,7 @@ if __name__ == "__main__":
 
         print(nlp.predict(encoded_vect), nlp)
         print(nlp2.predict(encoded_tfid), nlp2)
-        print(nlp3.predict(encoded_vect), nlp3)
+        print(nlp3.predict(encoded_tfid), nlp3)
 
 
 
