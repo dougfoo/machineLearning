@@ -36,13 +36,14 @@ class W2VModel(object):
     """
     def __init__(self, mod=LogisticRegression):
         self.mod = mod()
+        self.dims = 100
 
     def __repr__(self):
         return 'FooModel: '+str((self.mod.__class__.__name__))+', '+str((self.embedding.__class__.__name__))
 
     def embed(self, texts) -> ([],[]):
         toks = [t.split(" ") for t in texts]    # embed per phrase
-        self.embedding = gensim.models.Word2Vec(toks, min_count=1,  size=100, window=5)
+        self.embedding = gensim.models.Word2Vec(toks, min_count=1,  size=self.dims, window=5)
         return self.doc_vector(toks)
 
     def doc_vector(self, texts) -> ([],[]):
@@ -51,14 +52,14 @@ class W2VModel(object):
         for t in texts:
             doc = [word for word in t if word in self.embedding.wv.vocab]
             if (len(doc)) == 0:
-                v.append(0.0)
+                v.append(np.zeros(self.dims))
             else:
-                v.append(np.mean(self.embedding[doc]))
+                v.append(np.mean(self.embedding[doc], axis=0))
             h.append(" ".join(doc))
         return v,h
 
     def train(self, X, y) -> None:
-        self.mod.fit(np.reshape(X,(-1,1)), y)
+        self.mod.fit(X, y)
 
     def transform(self, texts) -> []:
         toks = [t.split(" ") for t in texts]
@@ -66,11 +67,11 @@ class W2VModel(object):
         return v
 
     def score(self, X, y) -> float:
-        return self.mod.score(np.reshape(X,(-1,1)), y)
+        return self.mod.score(X,y)
 
     @timeit
     def predict(self, X) -> ([str],[float]):
-        return self.mod.predict(np.reshape(X,(-1,1))), self.mod.predict_proba(np.reshape(X,(-1,1)))
+        return self.mod.predict(X), self.mod.predict_proba(X)
 
 
 class FooModel(object):
@@ -222,25 +223,26 @@ class FooNLP(object):
 
 if __name__ == "__main__":
     nlp = FooNLP(model=W2VModel())   # wv2 + logistic
-    nlp2 = FooNLP(model=FooModel(embedding=TfidfVectorizer) ) # default naive bayes
-    nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))  # default CountVector
 
     nlp.load_train_stanford()
-    nlp2.load_train_stanford()
-    nlp3.load_train_stanford()
     sents = ['I enjoy happy i love it superstar sunshine','I hate kill die horrible','Do you love or hate me?']
     encoded_w2v = nlp.encode(sents)
-    encoded_tfid = nlp2.encode(sents)
-    encoded_cv = nlp3.encode(sents)
 
     print(sents)
     print(encoded_w2v)
-    print(encoded_tfid)
-    print(encoded_cv)
-
     print(nlp, nlp.predict(encoded_w2v))
-    print(nlp2, nlp2.predict(encoded_tfid))
-    print(nlp3, nlp3.predict(encoded_cv))
+
+    # nlp2 = FooNLP(model=FooModel(embedding=TfidfVectorizer) ) # default naive bayes
+    # nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))  # default CountVector
+    # nlp2.load_train_stanford(5000)
+    # nlp3.load_train_stanford(5000)
+    # encoded_tfid = nlp2.encode(sents)
+    # encoded_cv = nlp3.encode(sents)
+    # print(encoded_tfid)
+    # print(encoded_cv)
+    # print(nlp2, nlp2.predict(encoded_tfid))
+    # print(nlp3, nlp3.predict(encoded_cv))
+
 
     print('ready for inputs, type ^C or empty line to break out')
 
@@ -250,11 +252,12 @@ if __name__ == "__main__":
             print('quitting see ya')
             break
         encoded_vect = nlp.encode([txt])
-        encoded_tfid = nlp2.encode([txt])
-
         print(nlp.predict(encoded_vect), nlp)
-        print(nlp2.predict(encoded_tfid), nlp2)
-        print(nlp3.predict(encoded_tfid), nlp3)
+
+        # encoded_tfid = nlp2.encode([txt])
+        # encoded_cv = nlp3.encode([txt])
+        # print(nlp2.predict(encoded_tfid), nlp2)
+        # print(nlp3.predict(encoded_cv), nlp3)
 
 
 
