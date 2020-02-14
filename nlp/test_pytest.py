@@ -1,4 +1,4 @@
-from nlp import FooNLP, FooModel, W2VEmbedding
+from nlp import FooNLP, FooModel, W2VModel
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import pandas as pd
 
@@ -22,14 +22,11 @@ clean_outputs = [
 ]
 
 def test_embeddings():
-    emb = Embeddings()
+    emb = W2VModel()
     sentences = [['the','sentence','is','red'],['my','sentence','is','blue','zeta'], ['my','sentence','is','not','gamma']]
-    cbow, skip = emb.word2vec(sentences)
-    print(cbow)
-    print(cbow.wv)
-    print(cbow.wv.vocab)
-    print(list(cbow.wv.vocab))
-    print(cbow.wv.similarity('sentence','blue'))
+    v, h = emb.embed(sentences)
+    print(v)
+    print(h)
 
 
 def test_clean():
@@ -97,7 +94,6 @@ def test_stanford_countv():
     assert (r[1] == 'medium')
     assert (r[2] == 'medium')
 
-
 def test_stanford_tfidf():
     nlp = FooNLP(model=FooModel(TfidfVectorizer))
     smodel = nlp.load_train_stanford(50000)
@@ -108,14 +104,14 @@ def test_stanford_tfidf():
     assert (r[1] == 'good')
     assert (r[2] == 'good')
 
-
 def test_word2vec():
     w2v = W2VModel()
-    emb.embed([['the','sentence','is','red'],['my','sentence','is','blue','zeta'], ['my','sentence','is','not','gamma']])
-    avgs = emb.vectors_1d()
-    headers = emb.headers()
-    assert(sorted(headers.keys())[0] == 'blue')
-    assert(len(avgs) == len(headers))
+    sents = ['I am so happy i love it super','I hate kill die horrible','Do you love or hate me?']
+    v,h = w2v.embed(sents)
 
+    print(v)
+    print(h)
+
+    assert(1==1)
 
 

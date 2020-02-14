@@ -34,17 +34,19 @@ class W2VModel(object):
     Wrapper for Word2Vec that creates an internal 2d embedding
     flattened to averages for training and inference
     """
-    def __init__(self, mod=LogisticRegression):
+    def __init__(self, mod=LogisticRegression, sg=0, dims=100):
         self.mod = mod()
-        self.dims = 100
+        self.dims = dims
+        self.sg = sg
 
     def __repr__(self):
         return 'FooModel: '+str((self.mod.__class__.__name__))+', '+str((self.embedding.__class__.__name__))
 
     def embed(self, texts) -> ([],[]):
         toks = [t.split(" ") for t in texts]    # embed per phrase
-        self.embedding = gensim.models.Word2Vec(toks, min_count=1,  size=self.dims, window=5)
-        return self.doc_vector(toks)
+        self.embedding = gensim.models.Word2Vec(toks, min_count=1,  size=self.dims, window=5, sg=self.sg)
+        self.matrix,self.headers = self.doc_vector(toks)
+        return self.matrix, self.headers
 
     def doc_vector(self, texts) -> ([],[]):
         v = []
@@ -118,15 +120,8 @@ class FooNLP(object):
     def full_proc(self, text) -> str:
         text = self.expand(text)
         text = self.clean(text)
-        text = self.lemmitize(text)
+        text = self.stem(text)
         text = self.destop(text)
-        return text
-
-    def clean(self, text) -> str:
-        text = unidecode.unidecode(text)  # clean accents
-        text = re.sub(r'[^a-zA-Z\s]', '', text, re.I | re.A)
-        text = text.lower()
-        text = text.strip()
         return text
 
     def expand(self, text) -> str:
@@ -137,7 +132,14 @@ class FooNLP(object):
         text = re.sub(r"doesn't", 'does not', text, re.I | re.A)
         return text
 
-    def lemmitize(self, text) -> str:
+    def clean(self, text) -> str:
+        text = unidecode.unidecode(text)  # clean accents
+        text = re.sub(r'[^a-zA-Z\s]', '', text, re.I | re.A)
+        text = text.lower()
+        text = text.strip()
+        return text
+
+    def stem(self, text) -> str:
         toks = self.tokenize(text)        
         for i, word in enumerate(toks):
             if (len(word) > 4):
@@ -145,19 +147,18 @@ class FooNLP(object):
                 word = re.sub(r"ed\b", '', word, re.I | re.A)
                 word = re.sub(r"s\b", '', word, re.I | re.A)
                 toks[i] = word
-
         return " ".join(toks)
 
-    def lemmitize_word(self, text) -> str:   # not such a good way, complexity merits using nltk lib
-        return text
+    def tokenize(self, text) -> [str]:
+        toks = text.split(' ')
+        return [t.strip() for t in toks if t != '']
 
     def destop(self, text,) -> str:
         words = self.tokenize(text)
         return " ".join([x for x in words if x not in self.stoplist])
 
-    def tokenize(self, text) -> [str]:
-        toks = text.split(' ')
-        return [t.strip() for t in toks if t != '']
+    def stem_word(self, text) -> str:   # not such a good way, complexity merits using nltk lib
+        return text
 
     def encode(self, texts) -> []:
         return self.model.transform(texts)
@@ -220,29 +221,45 @@ class FooNLP(object):
     def score(self, X, y) -> float:
         return self.model.score(X,y)
 
+    import pickle
+    def save(self, path):
+        pickle.dump(path, self) 
+    
+    def load(self, path):
+        obj = pickle.load(path) 
+
 
 if __name__ == "__main__":
-    nlp = FooNLP(model=W2VModel())   # wv2 + logistic
+    nlp = FooNLP(model=W2VModel(sg=0, dims=100))   # wv2cbow + multi-naivebaise
+    nlp1 = FooNLP(model=W2VModel(sg=1, dims=100))   # wv2sg + multi-naivebaise
 
-    nlp.load_train_stanford()
-    sents = ['I enjoy happy i love it superstar sunshine','I hate kill die horrible','Do you love or hate me?']
+    nlp.load_train_twitter()
+    nlp1.load_train_twitter(5000)
+    sents = ['I enjoy happy i love it superstar love sunshine','I hate kill die horrible','Do you love or hate me?']
     encoded_w2v = nlp.encode(sents)
+    encoded_w2v_sg = nlp1.encode(sents)
 
     print(sents)
     print(encoded_w2v)
+    print(encoded_w2v_sg)
     print(nlp, nlp.predict(encoded_w2v))
+    print(nlp1, nlp1.predict(encoded_w2v_sg))
 
-    # nlp2 = FooNLP(model=FooModel(embedding=TfidfVectorizer) ) # default naive bayes
-    # nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))  # default CountVector
-    # nlp2.load_train_stanford(5000)
-    # nlp3.load_train_stanford(5000)
-    # encoded_tfid = nlp2.encode(sents)
-    # encoded_cv = nlp3.encode(sents)
-    # print(encoded_tfid)
-    # print(encoded_cv)
-    # print(nlp2, nlp2.predict(encoded_tfid))
-    # print(nlp3, nlp3.predict(encoded_cv))
+    nlp2 = FooNLP(model=FooModel(embedding=TfidfVectorizer) ) # default naive bayes
+    nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))  # default CountVector
+    nlp2.load_train_twitter()
+    nlp3.load_train_twitter()
+    encoded_tfid = nlp2.encode(sents)
+    encoded_cv = nlp3.encode(sents)
+    print(encoded_tfid)
+    print(encoded_cv)
+    print(nlp2, nlp2.predict(encoded_tfid))
+    print(nlp3, nlp3.predict(encoded_cv))
 
+    nlp.save('w2vcbow.nb.twitter.model')
+    nlp1.save('w2vsg.nb.twitter.model')
+    nlp2.save('tfid.nb.twitter.model')
+    nlp3.save('cv.lr.twitter.model')
 
     print('ready for inputs, type ^C or empty line to break out')
 
@@ -254,10 +271,14 @@ if __name__ == "__main__":
         encoded_vect = nlp.encode([txt])
         print(nlp.predict(encoded_vect), nlp)
 
-        # encoded_tfid = nlp2.encode([txt])
-        # encoded_cv = nlp3.encode([txt])
-        # print(nlp2.predict(encoded_tfid), nlp2)
-        # print(nlp3.predict(encoded_cv), nlp3)
+        encoded_vect = nlp1.encode([txt])
+        print(nlp1.predict(encoded_vect), nlp1)
+
+        encoded_tfid = nlp2.encode([txt])
+        encoded_cv = nlp3.encode([txt])
+        print(nlp2.predict(encoded_tfid), nlp2)
+        print(nlp3.predict(encoded_cv), nlp3)
+        print('\n')
 
 
 
