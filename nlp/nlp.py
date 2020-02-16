@@ -1,13 +1,14 @@
 import re
+import os
 import unidecode
 import statistics
 import pickle
 import compress_pickle
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import BernoulliNB, ComplementNB, GaussianNB
 from sklearn.linear_model import LogisticRegression
 import gensim
 import nltk
@@ -86,7 +87,7 @@ class FooModel(object):
     Basic container for standard 1d embeddings - CountVectorizer, TfidfVectorizer embeddings
     Models MultinomialNB, LogisticRegression that have similar input types
     """
-    def __init__(self, mod=MultinomialNB, embedding=CountVectorizer):
+    def __init__(self, mod=GaussianNB, embedding=CountVectorizer):
         self.embedding = embedding()
         self.mod = mod()
 
@@ -96,6 +97,9 @@ class FooModel(object):
     def embed(self, texts) -> ([],[]):
         self.matrix = self.embedding.fit_transform(texts)
         self.headers = self.embedding.get_feature_names()
+        return self.matrix, self.headers
+
+    def word_vector(self) -> ([],[]):
         return self.matrix, self.headers
 
     def train(self, X, y) -> None:
@@ -109,6 +113,8 @@ class FooModel(object):
 
     @timeit
     def predict(self, X) -> ([str],[float]):
+        if (isinstance(self.embedding, TfidfVectorizer)):  # or self.mod == GaussianNB
+            X = X.toarray()
         return self.mod.predict(X), self.mod.predict_proba(X)
 
 
@@ -168,6 +174,7 @@ class FooNLP(object):
     def encode(self, texts) -> []:
         return self.model.transform(texts)
 
+    @timeit
     def make_embeddings(self, text) -> ([],[]):
         return self.model.embed(text)
 
@@ -220,24 +227,54 @@ class FooNLP(object):
         print('trained test score: ', self.model, self.model.score(X_test, y_test))
         return self.model
     
+    @timeit
     def predict(self, X) -> ([str],[float]):
         encoded_X = self.encode(X)
         return self.model.predict(encoded_X)
 
+    @timeit
     def score(self, X, y) -> float:
         encoded_X = self.encode(X)
         return self.model.score(encoded_X,y)
 
+    @timeit
     def save(self, path, obj):
         pickle.dump(obj, open( path, "wb" ) ) 
         print(f'saving... {obj} to {path}')
         return obj
 
+    @timeit
     def load(self, path):
         obj = pickle.load(open(path, "rb")) 
         print(f'loaded... {obj} from {path}')
         return obj
 
+def make_test_model(nlp, sents, label):
+    path = f'{label}.ser'
+    if (os.path.exists(path)):
+        print(f'----- loading model {path}')
+        nlp = nlp.load(path)
+    else:
+        print(f'----- saving model {path}')
+        nlp.load_train_twitter()
+        nlp.save(path, nlp)   # takes 1min to load, 1.4gb file
+
+    encoded_w2v = nlp.encode(sents)
+
+    pp.pprint(sents)
+    print('**--word vectors:')
+    wv,wh = nlp.model.word_vector()
+    if (isinstance(nlp.model, FooModel)):   # too many samples (1.5m to show), already in row format
+        df = pd.DataFrame(wv[0:10].toarray(), columns=wh)
+    else:                         # 100 vectors ok, but need Transpose
+        df = pd.DataFrame(wv.T, columns=wh)
+    pp.pprint(df.head())
+    print('**--sentence vectors:')
+    pp.pprint(nlp.encode(sents))
+    print('-----predicts-----')
+    pp.pprint(list(zip(list(zip(*nlp.predict(sents))), sents)))
+    print('\n')
+    return nlp
 
 if __name__ == "__main__":
     import pprint
@@ -247,13 +284,6 @@ if __name__ == "__main__":
     pd.set_option('precision', 2)
     np.set_printoptions(precision=2)
 
-    nlp = FooNLP(model=W2VModel(mod=LogisticRegression, sg=0, dims=100))   # wv2cbow + multi-naivebaise
-    # nlp.load_train_twitter()
-    # nlp.save('w2vcbow.lr.full.foonlp.ser', nlp)
-    nlp = nlp.load('w2vcbow.lr.full.foonlp.ser')   # takes 1min to load, 1.4gb file
-
-    # nlp1 = FooNLP(model=W2VModel(sg=1, dims=100))   # wv2sg + multi-naivebaise
-    # nlp1.load_train_twitter()
     sents = [
         'Captain, you almost make me believe in luck',
         'I fail to comprehend your indignation, sir. I have simply made the logical deduction that you are a liar',
@@ -269,62 +299,48 @@ if __name__ == "__main__":
         'I''m frequently appalled by the low regard you Earthmen have for life',
         'Has it occurred to you that there is a certain...inefficiency in constantly questioning me on things you''ve already made up your mind about?'
         ]
-    encoded_w2v = nlp.encode(sents)
 
-    pp.pprint(sents)
-    print('-----w2v cbow-----')
-    print('word vectors:')
-    wv,wh = nlp.model.word_vector()  
-    df = pd.DataFrame(wv.T, columns=wh)
-    pp.pprint(df.head())
-    print('sentence vectors:')
-    pp.pprint(nlp.encode(sents))
-    # print('-----w2v skipgram-----')
-    # print('word vectors:')
-    # encoded_w2v_sg = nlp1.encode(sents)
-    # wv,wh = nlp1.model.word_vector()  
-    # df = pd.DataFrame(wv.T, columns=wh)
-    # pp.pprint(df.head())
-    print('sentence vectors:')
-    pp.pprint(nlp.encode(sents))
-    print('-----predicts-----')
-    pp.pprint(list(zip(list(zip(*nlp.predict(sents))), sents)))
-    # pp.pprint(list(zip(list(zip(*nlp1.predict(sents))), sents)))
+    nlp1 = FooNLP(model=W2VModel(mod=LogisticRegression, sg=0, dims=100))   
+    nlp1 = make_test_model(nlp1, sents, 'w2vcbow.lr.fulltwitter.foonlp') 
 
-    # nlp2 = FooNLP(model=FooModel(embedding=TfidfVectorizer) ) # default naive bayes
-    # nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))  # default CountVector
-    # nlp2.load_train_twitter(5000)
-    # nlp3.load_train_twitter(5000)
-    # encoded_tfid = nlp2.encode(sents)
-    # encoded_cv = nlp3.encode(sents)
-    # pp.pprint(encoded_tfid)
-    # pp.pprint(encoded_cv)
-    # pp.pprint(list(zip(list(zip(*nlp2.predict(sents))), sents)))
-    # pp.pprint(list(zip(list(zip(*nlp3.predict(sents))), sents)))
+    nlp2 = FooNLP(model=W2VModel(mod=BernoulliNB, sg=0, dims=100))   
+    nlp2 = make_test_model(nlp2, sents, 'w2vcbow.nb.fulltwitter.foonlp') 
 
-    # nlp.save('w2vcbow.nb.twitter.model')
-    # nlp1.save('w2vsg.nb.twitter.model')
-    # nlp2.save('tfid.nb.twitter.model')
-    # nlp3.save('cv.lr.twitter.model')
+    nlp3 = FooNLP(model=W2VModel(mod=LogisticRegression, sg=1, dims=100))   
+    nlp3 = make_test_model(nlp3, sents, 'w2vsg.lr.fulltwitter.foonlp') 
 
-    # pp.pprint('ready for inputs, type ^C or empty line to break out')
+    nlp4 = FooNLP(model=W2VModel(mod=BernoulliNB, sg=1, dims=100)) 
+    nlp4 = make_test_model(nlp4, sents, 'w2vsg.nb.fulltwitter.foonlp') 
 
-    # while True:
-    #     txt = input('Enter Text> ')
-    #     if (txt == ''):
-    #         pp.pprint('quitting see ya')
-    #         break
-    #     encoded_vect = nlp.encode([txt])
-    #     pp.pprint(list(zip(list(zip(*nlp.predict([txt]]))), sents)))
+    nlp5 = FooNLP(model=FooModel(mod=BernoulliNB, embedding=TfidfVectorizer) ) # need NB that works w/ sparse
+    nlp5 = make_test_model(nlp5, sents, 'tfidf.nb.fulltwitter.foonlp')        
 
-    #     encoded_vect = nlp1.encode([txt])
-    #     pp.pprint(list(zip(list(zip(*nlp1.predict([txt]]))), sents)))
+    nlp6 = FooNLP(model=FooModel(mod=BernoulliNB, embedding=CountVectorizer))  # need NB that works w/ sparse 
+    nlp6 = make_test_model(nlp6, sents, 'cvec.nb.fulltwitter.foonlp')
 
-    #     encoded_tfid = nlp2.encode([txt])
-    #     encoded_cv = nlp3.encode([txt])
-    #     pp.pprint(list(zip(list(zip(*nlp2.predict([txt]]))), sents)))
-    #     pp.pprint(list(zip(list(zip(*nlp3.predict([txt]))), sents)))
-    #     pp.pprint('\n')
+    nlp7 = FooNLP(model=FooModel(mod=LogisticRegression, embedding=TfidfVectorizer) ) # works w/o transform
+    nlp7 = make_test_model(nlp7, sents, 'tfidf.lr.fulltwitter.foonlp')
+
+    nlp8 = FooNLP(model=FooModel(mod=LogisticRegression, embedding=CountVectorizer))  # works w/o transform
+    nlp8 = make_test_model(nlp8, sents, 'cvec.lr.fulltwitter.foonlp')
+
+
+    pp.pprint('ready for inputs, type ^C or empty line to break out')
+
+    while True:
+        txt = input('Enter Text> ')
+        if (txt == ''):
+            pp.pprint('quitting see ya')
+            break
+        pp.pprint(list(zip(list(zip(*nlp1.predict([txt]))), sents)))
+        pp.pprint(list(zip(list(zip(*nlp2.predict([txt]))), sents)))
+        pp.pprint(list(zip(list(zip(*nlp3.predict([txt]))), sents)))
+        pp.pprint(list(zip(list(zip(*nlp4.predict([txt]))), sents)))
+        pp.pprint(list(zip(list(zip(*nlp5.predict([txt]))), sents)))
+        pp.pprint(list(zip(list(zip(*nlp6.predict([txt]))), sents)))
+        pp.pprint(list(zip(list(zip(*nlp7.predict([txt]))), sents)))
+        pp.pprint(list(zip(list(zip(*nlp8.predict([txt]))), sents)))
+        pp.pprint('\n')
 
 
 
