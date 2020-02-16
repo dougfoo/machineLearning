@@ -62,7 +62,7 @@ class W2VModel(object):
             if (len(doc)) == 0:
                 v.append(np.zeros(self.dims))
             else:
-                v.append(np.mean(self.embedding[doc], axis=0))
+                v.append(np.mean(self.embedding.wv[doc], axis=0))
             h.append(" ".join(doc))
         return v,h
 
@@ -332,14 +332,14 @@ if __name__ == "__main__":
         if (txt == ''):
             pp.pprint('quitting see ya')
             break
-        pp.pprint(list(zip(list(zip(*nlp1.predict([txt]))), sents)))
-        pp.pprint(list(zip(list(zip(*nlp2.predict([txt]))), sents)))
-        pp.pprint(list(zip(list(zip(*nlp3.predict([txt]))), sents)))
-        pp.pprint(list(zip(list(zip(*nlp4.predict([txt]))), sents)))
-        pp.pprint(list(zip(list(zip(*nlp5.predict([txt]))), sents)))
-        pp.pprint(list(zip(list(zip(*nlp6.predict([txt]))), sents)))
-        pp.pprint(list(zip(list(zip(*nlp7.predict([txt]))), sents)))
-        pp.pprint(list(zip(list(zip(*nlp8.predict([txt]))), sents)))
+        pp.pprint(list(zip(list(zip(*nlp1.predict([txt]))), [txt])))
+        pp.pprint(list(zip(list(zip(*nlp2.predict([txt]))), [txt])))
+        pp.pprint(list(zip(list(zip(*nlp3.predict([txt]))), [txt])))
+        pp.pprint(list(zip(list(zip(*nlp4.predict([txt]))), [txt])))
+        pp.pprint(list(zip(list(zip(*nlp5.predict([txt]))), [txt])))
+        pp.pprint(list(zip(list(zip(*nlp6.predict([txt]))), [txt])))
+        pp.pprint(list(zip(list(zip(*nlp7.predict([txt]))), [txt])))
+        pp.pprint(list(zip(list(zip(*nlp8.predict([txt]))), [txt])))
         pp.pprint('\n')
 
 
