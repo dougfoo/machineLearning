@@ -48,6 +48,9 @@ class W2VModel(object):
         self.matrix,self.headers = self.doc_vector(toks)
         return self.matrix, self.headers
 
+    def word_vector(self) -> ([],[]):
+        return self.embedding.wv[self.embedding.wv.vocab], self.embedding.wv.vocab
+
     def doc_vector(self, texts) -> ([],[]):
         v = []
         h = []
@@ -241,11 +244,11 @@ if __name__ == "__main__":
     pd.set_option('precision', 2)
     np.set_printoptions(precision=2)
 
-    nlp = FooNLP(model=W2VModel(sg=0, dims=10))   # wv2cbow + multi-naivebaise
-    nlp1 = FooNLP(model=W2VModel(sg=1, dims=10))   # wv2sg + multi-naivebaise
+    nlp = FooNLP(model=W2VModel(sg=0, dims=100))   # wv2cbow + multi-naivebaise
+    nlp1 = FooNLP(model=W2VModel(sg=1, dims=100))   # wv2sg + multi-naivebaise
 
-    nlp.load_train_twitter(5000)
-    nlp1.load_train_twitter(5000)
+    nlp.load_train_twitter()
+    nlp1.load_train_twitter()
 #    sents = ['I enjoy happy i love it superstar love sunshine','I hate kill die horrible','Do you love or hate me?']
     sents = ['That is illogical','The needs of the many outweigh the needs of the few, or the one','Live long and prosper']
     encoded_w2v = nlp.encode(sents)
@@ -254,23 +257,20 @@ if __name__ == "__main__":
     pp.pprint(sents)
     print('-----w2v cbow-----')
     print('word vectors:')
-    w2v = nlp.model.embedding
-    wordVectors = w2v.wv[w2v.wv.vocab]
-    wordHeaders = w2v.wv.vocab
-    df = pd.DataFrame(wordVectors.T, columns=wordHeaders)
+    wv,wh = nlp.model.word_vector()  
+    df = pd.DataFrame(wv.T, columns=wh)
     pp.pprint(df.head())
     print('sentence vectors:')
     pp.pprint(nlp.encode(sents))
     print('-----w2v skipgram-----')
     print('word vectors:')
-    w2v = nlp1.model.embedding
-    wordVectors = w2v.wv[w2v.wv.vocab]
-    wordHeaders = w2v.wv.vocab
-    df = pd.DataFrame(wordVectors.T, columns=wordHeaders)
+    wv,wh = nlp1.model.word_vector()  
+    df = pd.DataFrame(wv.T, columns=wh)
     pp.pprint(df.head())
     print('sentence vectors:')
     pp.pprint(nlp.encode(sents))
     print('-----predicts-----')
+    pp.pprint(sents)
     pp.pprint(nlp.predict(sents))
     pp.pprint(nlp1.predict(sents))
 
