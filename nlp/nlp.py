@@ -240,7 +240,7 @@ if __name__ == "__main__":
     import pprint
     import pandas as pd
     import numpy as np
-    pp = pprint.PrettyPrinter()
+    pp = pprint.PrettyPrinter(width=140)
     pd.set_option('precision', 2)
     np.set_printoptions(precision=2)
 
@@ -250,7 +250,21 @@ if __name__ == "__main__":
     nlp.load_train_twitter()
     nlp1.load_train_twitter()
 #    sents = ['I enjoy happy i love it superstar love sunshine','I hate kill die horrible','Do you love or hate me?']
-    sents = ['That is illogical','The needs of the many outweigh the needs of the few, or the one','Live long and prosper']
+    sents = [
+        'Captain, you almost make me believe in luck',
+        'I fail to comprehend your indignation, sir. I have simply made the logical deduction that you are a liar',
+        'The needs of the many outweigh the needs of the few, or the one',
+        'Live long and prosper',
+        'It would be illogical to kill without reason',
+        'I''ll never understand the medical mind',
+        'Computers make excellent and efficient servants, but I have no wish to serve under them',
+        'Captain, you almost make me believe in luck',
+        'My congratulations, Captain—a dazzling display of logic',
+        'I have never understood the female capacity to avoid a direct answer to any question',
+        'After a time, you may find that having is not so pleasing a thing after all as wanting. It is not logical, but is often true',
+        'I''m frequently appalled by the low regard you Earthmen have for life',
+        'Has it occurred to you that there is a certain...inefficiency in constantly questioning me on things you''ve already made up your mind about?'
+        ]
     encoded_w2v = nlp.encode(sents)
     encoded_w2v_sg = nlp1.encode(sents)
 
@@ -270,9 +284,8 @@ if __name__ == "__main__":
     print('sentence vectors:')
     pp.pprint(nlp.encode(sents))
     print('-----predicts-----')
-    pp.pprint(sents)
-    pp.pprint(nlp.predict(sents))
-    pp.pprint(nlp1.predict(sents))
+    pp.pprint(list(zip(list(zip(*nlp.predict(sents))), sents)))
+    pp.pprint(list(zip(list(zip(*nlp1.predict(sents))), sents)))
 
     # nlp2 = FooNLP(model=FooModel(embedding=TfidfVectorizer) ) # default naive bayes
     # nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))  # default CountVector
@@ -282,8 +295,8 @@ if __name__ == "__main__":
     # encoded_cv = nlp3.encode(sents)
     # pp.pprint(encoded_tfid)
     # pp.pprint(encoded_cv)
-    # print(nlp2, nlp2.predict(sents))
-    # print(nlp3, nlp3.predict(sents))
+    # pp.pprint(list(zip(list(zip(*nlp2.predict(sents))), sents)))
+    # pp.pprint(list(zip(list(zip(*nlp3.predict(sents))), sents)))
 
     # nlp.save('w2vcbow.nb.twitter.model')
     # nlp1.save('w2vsg.nb.twitter.model')
@@ -298,15 +311,15 @@ if __name__ == "__main__":
     #         pp.pprint('quitting see ya')
     #         break
     #     encoded_vect = nlp.encode([txt])
-    #     print(nlp.predict([txt]), nlp)
+    #     pp.pprint(list(zip(list(zip(*nlp.predict([txt]]))), sents)))
 
     #     encoded_vect = nlp1.encode([txt])
-    #     print(nlp1.predict([txt]), nlp1)
+    #     pp.pprint(list(zip(list(zip(*nlp1.predict([txt]]))), sents)))
 
     #     encoded_tfid = nlp2.encode([txt])
     #     encoded_cv = nlp3.encode([txt])
-    #     print(nlp2.predict([txt]), nlp2)
-    #     print(nlp3.predict([txt]), nlp3)
+    #     pp.pprint(list(zip(list(zip(*nlp2.predict([txt]]))), sents)))
+    #     pp.pprint(list(zip(list(zip(*nlp3.predict([txt]))), sents)))
     #     pp.pprint('\n')
 
 
