@@ -1,6 +1,8 @@
 import re
 import unidecode
 import statistics
+import pickle
+import compress_pickle
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
@@ -226,14 +228,15 @@ class FooNLP(object):
         encoded_X = self.encode(X)
         return self.model.score(encoded_X,y)
 
-    # import pickle
-    def save(self, path):
-        # pickle.dump(path, self) 
-        pass
-    
+    def save(self, path, obj):
+        pickle.dump(obj, open( path, "wb" ) ) 
+        print(f'saving... {obj} to {path}')
+        return obj
+
     def load(self, path):
-        # obj = pickle.load(path) 
-        pass
+        obj = pickle.load(open(path, "rb")) 
+        print(f'loaded... {obj} from {path}')
+        return obj
 
 
 if __name__ == "__main__":
@@ -244,12 +247,13 @@ if __name__ == "__main__":
     pd.set_option('precision', 2)
     np.set_printoptions(precision=2)
 
-    nlp = FooNLP(model=W2VModel(sg=0, dims=100))   # wv2cbow + multi-naivebaise
-    nlp1 = FooNLP(model=W2VModel(sg=1, dims=100))   # wv2sg + multi-naivebaise
+    nlp = FooNLP(model=W2VModel(mod=LogisticRegression, sg=0, dims=100))   # wv2cbow + multi-naivebaise
+    # nlp.load_train_twitter()
+    # nlp.save('w2vcbow.lr.full.foonlp.ser', nlp)
+    nlp = nlp.load('w2vcbow.lr.full.foonlp.ser')   # takes 1min to load, 1.4gb file
 
-    nlp.load_train_twitter()
-    nlp1.load_train_twitter()
-#    sents = ['I enjoy happy i love it superstar love sunshine','I hate kill die horrible','Do you love or hate me?']
+    # nlp1 = FooNLP(model=W2VModel(sg=1, dims=100))   # wv2sg + multi-naivebaise
+    # nlp1.load_train_twitter()
     sents = [
         'Captain, you almost make me believe in luck',
         'I fail to comprehend your indignation, sir. I have simply made the logical deduction that you are a liar',
@@ -266,7 +270,6 @@ if __name__ == "__main__":
         'Has it occurred to you that there is a certain...inefficiency in constantly questioning me on things you''ve already made up your mind about?'
         ]
     encoded_w2v = nlp.encode(sents)
-    encoded_w2v_sg = nlp1.encode(sents)
 
     pp.pprint(sents)
     print('-----w2v cbow-----')
@@ -276,16 +279,17 @@ if __name__ == "__main__":
     pp.pprint(df.head())
     print('sentence vectors:')
     pp.pprint(nlp.encode(sents))
-    print('-----w2v skipgram-----')
-    print('word vectors:')
-    wv,wh = nlp1.model.word_vector()  
-    df = pd.DataFrame(wv.T, columns=wh)
-    pp.pprint(df.head())
+    # print('-----w2v skipgram-----')
+    # print('word vectors:')
+    # encoded_w2v_sg = nlp1.encode(sents)
+    # wv,wh = nlp1.model.word_vector()  
+    # df = pd.DataFrame(wv.T, columns=wh)
+    # pp.pprint(df.head())
     print('sentence vectors:')
     pp.pprint(nlp.encode(sents))
     print('-----predicts-----')
     pp.pprint(list(zip(list(zip(*nlp.predict(sents))), sents)))
-    pp.pprint(list(zip(list(zip(*nlp1.predict(sents))), sents)))
+    # pp.pprint(list(zip(list(zip(*nlp1.predict(sents))), sents)))
 
     # nlp2 = FooNLP(model=FooModel(embedding=TfidfVectorizer) ) # default naive bayes
     # nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))  # default CountVector

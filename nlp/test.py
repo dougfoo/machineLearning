@@ -5,6 +5,9 @@ class Bar(object):
         self.var1 = var1
         self.var2 = var2
 
+    def __repr__(self):
+        return f'Bar {self.var1} - {self.var2}'
+
 
 class Foo(object):
     def __init__(self, var3=3):
@@ -16,16 +19,19 @@ class Foo(object):
 
     def save(self, path, obj):
         pickle.dump(obj, open( path, "wb" ) ) 
+        print(f'saving... {obj} to {path}')
         return obj
 
     def load(self, path):
         obj = pickle.load(open(path, "rb")) 
+        print(f'loaded... {obj} from {path}')
         return obj
 
 import io
-f = Foo(5)
+f = Foo(9)
 f.printme()
 f.save('test.ser', f)
 o = f.load('test.ser')
 print(type(o))
 o.printme()
+print(o.bar)
