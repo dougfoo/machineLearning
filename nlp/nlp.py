@@ -216,69 +216,98 @@ class FooNLP(object):
         return self.model
     
     def predict(self, X) -> ([str],[float]):
-        return self.model.predict(X)
+        encoded_X = self.encode(X)
+        return self.model.predict(encoded_X)
 
     def score(self, X, y) -> float:
-        return self.model.score(X,y)
+        encoded_X = self.encode(X)
+        return self.model.score(encoded_X,y)
 
-    import pickle
+    # import pickle
     def save(self, path):
-        pickle.dump(path, self) 
+        # pickle.dump(path, self) 
+        pass
     
     def load(self, path):
-        obj = pickle.load(path) 
+        # obj = pickle.load(path) 
+        pass
 
 
 if __name__ == "__main__":
-    nlp = FooNLP(model=W2VModel(sg=0, dims=100))   # wv2cbow + multi-naivebaise
-    nlp1 = FooNLP(model=W2VModel(sg=1, dims=100))   # wv2sg + multi-naivebaise
+    import pprint
+    import pandas as pd
+    import numpy as np
+    pp = pprint.PrettyPrinter()
+    pd.set_option('precision', 2)
+    np.set_printoptions(precision=2)
 
-    nlp.load_train_twitter()
+    nlp = FooNLP(model=W2VModel(sg=0, dims=10))   # wv2cbow + multi-naivebaise
+    nlp1 = FooNLP(model=W2VModel(sg=1, dims=10))   # wv2sg + multi-naivebaise
+
+    nlp.load_train_twitter(5000)
     nlp1.load_train_twitter(5000)
-    sents = ['I enjoy happy i love it superstar love sunshine','I hate kill die horrible','Do you love or hate me?']
+#    sents = ['I enjoy happy i love it superstar love sunshine','I hate kill die horrible','Do you love or hate me?']
+    sents = ['That is illogical','The needs of the many outweigh the needs of the few, or the one','Live long and prosper']
     encoded_w2v = nlp.encode(sents)
     encoded_w2v_sg = nlp1.encode(sents)
 
-    print(sents)
-    print(encoded_w2v)
-    print(encoded_w2v_sg)
-    print(nlp, nlp.predict(encoded_w2v))
-    print(nlp1, nlp1.predict(encoded_w2v_sg))
+    pp.pprint(sents)
+    print('-----w2v cbow-----')
+    print('word vectors:')
+    w2v = nlp.model.embedding
+    wordVectors = w2v.wv[w2v.wv.vocab]
+    wordHeaders = w2v.wv.vocab
+    df = pd.DataFrame(wordVectors.T, columns=wordHeaders)
+    pp.pprint(df.head())
+    print('sentence vectors:')
+    pp.pprint(nlp.encode(sents))
+    print('-----w2v skipgram-----')
+    print('word vectors:')
+    w2v = nlp1.model.embedding
+    wordVectors = w2v.wv[w2v.wv.vocab]
+    wordHeaders = w2v.wv.vocab
+    df = pd.DataFrame(wordVectors.T, columns=wordHeaders)
+    pp.pprint(df.head())
+    print('sentence vectors:')
+    pp.pprint(nlp.encode(sents))
+    print('-----predicts-----')
+    pp.pprint(nlp.predict(sents))
+    pp.pprint(nlp1.predict(sents))
 
-    nlp2 = FooNLP(model=FooModel(embedding=TfidfVectorizer) ) # default naive bayes
-    nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))  # default CountVector
-    nlp2.load_train_twitter()
-    nlp3.load_train_twitter()
-    encoded_tfid = nlp2.encode(sents)
-    encoded_cv = nlp3.encode(sents)
-    print(encoded_tfid)
-    print(encoded_cv)
-    print(nlp2, nlp2.predict(encoded_tfid))
-    print(nlp3, nlp3.predict(encoded_cv))
+    # nlp2 = FooNLP(model=FooModel(embedding=TfidfVectorizer) ) # default naive bayes
+    # nlp3 = FooNLP(model=FooModel(mod=LogisticRegression))  # default CountVector
+    # nlp2.load_train_twitter(5000)
+    # nlp3.load_train_twitter(5000)
+    # encoded_tfid = nlp2.encode(sents)
+    # encoded_cv = nlp3.encode(sents)
+    # pp.pprint(encoded_tfid)
+    # pp.pprint(encoded_cv)
+    # print(nlp2, nlp2.predict(sents))
+    # print(nlp3, nlp3.predict(sents))
 
-    nlp.save('w2vcbow.nb.twitter.model')
-    nlp1.save('w2vsg.nb.twitter.model')
-    nlp2.save('tfid.nb.twitter.model')
-    nlp3.save('cv.lr.twitter.model')
+    # nlp.save('w2vcbow.nb.twitter.model')
+    # nlp1.save('w2vsg.nb.twitter.model')
+    # nlp2.save('tfid.nb.twitter.model')
+    # nlp3.save('cv.lr.twitter.model')
 
-    print('ready for inputs, type ^C or empty line to break out')
+    # pp.pprint('ready for inputs, type ^C or empty line to break out')
 
-    while True:
-        txt = input('Enter Text> ')
-        if (txt == ''):
-            print('quitting see ya')
-            break
-        encoded_vect = nlp.encode([txt])
-        print(nlp.predict(encoded_vect), nlp)
+    # while True:
+    #     txt = input('Enter Text> ')
+    #     if (txt == ''):
+    #         pp.pprint('quitting see ya')
+    #         break
+    #     encoded_vect = nlp.encode([txt])
+    #     print(nlp.predict([txt]), nlp)
 
-        encoded_vect = nlp1.encode([txt])
-        print(nlp1.predict(encoded_vect), nlp1)
+    #     encoded_vect = nlp1.encode([txt])
+    #     print(nlp1.predict([txt]), nlp1)
 
-        encoded_tfid = nlp2.encode([txt])
-        encoded_cv = nlp3.encode([txt])
-        print(nlp2.predict(encoded_tfid), nlp2)
-        print(nlp3.predict(encoded_cv), nlp3)
-        print('\n')
+    #     encoded_tfid = nlp2.encode([txt])
+    #     encoded_cv = nlp3.encode([txt])
+    #     print(nlp2.predict([txt]), nlp2)
+    #     print(nlp3.predict([txt]), nlp3)
+    #     pp.pprint('\n')
 
 
 
