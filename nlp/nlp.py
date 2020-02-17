@@ -77,7 +77,6 @@ class W2VModel(object):
     def score(self, X, y) -> float:
         return self.mod.score(X,y)
 
-    @timeit
     def predict(self, X) -> ([str],[float]):
         return self.mod.predict(X), self.mod.predict_proba(X)
 
@@ -111,10 +110,9 @@ class FooModel(object):
     def transform(self, texts) -> []:
         return self.embedding.transform(texts)
 
-    @timeit
     def predict(self, X) -> ([str],[float]):
-        if (isinstance(self.embedding, TfidfVectorizer)):  # or self.mod == GaussianNB
-            X = X.toarray()
+        # if (isinstance(self.embedding, TfidfVectorizer)):  # or self.mod == GaussianNB
+        #     X = X.toarray()
         return self.mod.predict(X), self.mod.predict_proba(X)
 
 
@@ -269,12 +267,22 @@ def make_test_model(nlp, sents, label):
     else:                         # 100 vectors ok, but need Transpose
         df = pd.DataFrame(wv.T, columns=wh)
     pp.pprint(df.head())
-    print('**--sentence vectors:')
-    pp.pprint(nlp.encode(sents))
+    # print('**--sentence vectors:')
+    # pp.pprint(nlp.encode(sents))
     print('-----predicts-----')
     pp.pprint(list(zip(list(zip(*nlp.predict(sents))), sents)))
     print('\n')
     return nlp
+
+def print_demo():
+    nlp = FooNLP(model=W2VModel(mod=LogisticRegression, sg=0, dims=100))   
+    m2 = nlp.make_embeddings(sents)
+    wv,wh = nlp.model.word_vector()
+    df2 = pd.DataFrame(wv.toarray(), columns=wh)
+    pp.pprint(sents[1:6])
+    pp.pprint(df2.iloc[1:6,52:70])
+    pp.pprint(df2.iloc[1:6,52:70])
+    pp.pprint(df2.T[['logical','illogical','long','low','luck','made','make','many','may','me','medical','mind','needs']])
 
 if __name__ == "__main__":
     import pprint
@@ -285,12 +293,12 @@ if __name__ == "__main__":
     np.set_printoptions(precision=2)
 
     sents = [
-        'Captain, you almost make me believe in luck',
         'I fail to comprehend your indignation, sir. I have simply made the logical deduction that you are a liar',
         'The needs of the many outweigh the needs of the few, or the one',
         'Live long and prosper',
         'It would be illogical to kill without reason',
         'I''ll never understand the medical mind',
+        'It is curious how often you humans manage to obtain that which you do not want',
         'Computers make excellent and efficient servants, but I have no wish to serve under them',
         'Captain, you almost make me believe in luck',
         'My congratulations, Captain—a dazzling display of logic',
@@ -332,15 +340,15 @@ if __name__ == "__main__":
         if (txt == ''):
             pp.pprint('quitting see ya')
             break
-        pp.pprint(list(zip(list(zip(*nlp1.predict([txt]))), [txt])))
-        pp.pprint(list(zip(list(zip(*nlp2.predict([txt]))), [txt])))
-        pp.pprint(list(zip(list(zip(*nlp3.predict([txt]))), [txt])))
-        pp.pprint(list(zip(list(zip(*nlp4.predict([txt]))), [txt])))
-        pp.pprint(list(zip(list(zip(*nlp5.predict([txt]))), [txt])))
-        pp.pprint(list(zip(list(zip(*nlp6.predict([txt]))), [txt])))
-        pp.pprint(list(zip(list(zip(*nlp7.predict([txt]))), [txt])))
-        pp.pprint(list(zip(list(zip(*nlp8.predict([txt]))), [txt])))
-        pp.pprint('\n')
+        print(nlp1.predict([txt]), txt, nlp1.model)
+        print(nlp2.predict([txt]), txt, nlp2.model)
+        print(nlp3.predict([txt]), txt, nlp3.model)
+        print(nlp4.predict([txt]), txt, nlp4.model)
+        print(nlp5.predict([txt]), txt, nlp5.model)
+        print(nlp6.predict([txt]), txt, nlp6.model)
+        print(nlp7.predict([txt]), txt, nlp7.model)
+        print(nlp8.predict([txt]), txt, nlp8.model) 
+        print('\n')
 
 
 
