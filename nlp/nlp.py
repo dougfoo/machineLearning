@@ -17,6 +17,10 @@ import numpy as np
 from functools import wraps
 from time import time
 
+#
+# publishing as 1.0.0 - 2/18/2020
+#
+
 
 def timeit(method):
     def timed(*args, **kw):
@@ -270,7 +274,9 @@ def make_test_model(nlp, sents, label):
     # print('**--sentence vectors:')
     # pp.pprint(nlp.encode(sents))
     print('-----predicts-----')
-    pp.pprint(list(zip(list(zip(*nlp.predict(sents))), sents)))
+    # pp.pprint(list(zip(list(zip(*nlp.predict(sents))), sents)))
+    p = nlp.predict(sents)
+    pp.pprint(list(zip(p[0], list(list(zip(*p[1])))[1])))
     print('\n')
     return nlp
 
