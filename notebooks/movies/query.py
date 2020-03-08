@@ -76,9 +76,15 @@ def merge_wmap(links, ratings, metas) -> []:
 
 @timeit
 def pandas_join(links_df, ratings_df, metas_df) -> pd.DataFrame:
-    merged_df = pd.merge(links_df, ratings_df, on='movieId', how='right', validate='one_to_many')
-    merged_df = pd.merge(merged_df, metas_df[['title','imdb_id','budget']], left_on='imdbId', right_on='imdb_id', how='left', validate='many_to_many')
+    merged_df = pd.merge(links_df[['movieId','imdbId']], ratings_df[['movieId','rating']], on='movieId', how='right', validate='one_to_many')
+    merged_df = pd.merge(merged_df, metas_df[['title','imdb_id']], left_on='imdbId', right_on='imdb_id', how='left', validate='many_to_many')
     return merged_df
+
+def sqlite_load():
+    pass
+
+def sqlite_join():
+    pass
 
 files = ["links.csv", "ratings.csv","movies_metadata.csv"]
 
@@ -106,5 +112,6 @@ merged_df = pandas_join(links_df, ratings_df, metas_df)
 print(merged_df.head())
 print(merged_df.shape)
 
+# using sqlite
 
 
