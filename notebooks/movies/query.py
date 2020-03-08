@@ -80,6 +80,13 @@ def pandas_join(links_df, ratings_df, metas_df) -> pd.DataFrame:
     merged_df = pd.merge(merged_df, metas_df[['title','imdb_id']], left_on='imdbId', right_on='imdb_id', how='left', validate='many_to_many')
     return merged_df
 
+@timeit
+def pandas_join_group(links_df, ratings_df, metas_df) -> pd.DataFrame:
+    merged_df = pd.merge(links_df[['movieId','imdbId']], ratings_df[['movieId','rating']], on='movieId', how='right', validate='one_to_many')
+    merged_df = pd.merge(merged_df, metas_df[['title','imdb_id']], left_on='imdbId', right_on='imdb_id', how='inner')    
+    grouped_df = merged_df[['title','rating']].groupby('title').agg(Mean=('rating', 'mean' ), Count=('rating','count')).query('Mean > 4.5 and Count > 2')
+    return grouped_df
+
 def sqlite_load():
     pass
 
@@ -87,7 +94,7 @@ def sqlite_join():
     pass
 
 if __name__ == "__main__":
-    files = ["links.csv", "ratings_small.csv","movies_metadata.csv"]
+    files = ["links.csv", "ratings.csv","movies_metadata.csv"]
 
     # load files
     links = load_file(files[0])
@@ -108,11 +115,14 @@ if __name__ == "__main__":
     ratings_df = load_df(files[1])
     metas_df = load_df(files[2])
 
-    # using pandas merge
-    merged_df = pandas_join(links_df, ratings_df, metas_df)
-    print(merged_df.head())
-    print(merged_df.shape)
+    # using pandas merge to build full table
+    # merged_df = pandas_join(links_df, ratings_df, metas_df)
+    # print(merged_df.head())
+    # print(merged_df.shape)
 
-    # using sqlite
-
+    # group by having in pandas
+    grouped_df = pandas_join_group(links_df, ratings_df, metas_df)
+    grouped_df = pandas_join_group(links_df, ratings_df, metas_df)
+    print(grouped_df.head())
+    print(grouped_df.shape)
 

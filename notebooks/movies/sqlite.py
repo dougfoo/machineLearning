@@ -77,8 +77,8 @@ def index():
 
 @timeit
 def join():
-    cursorObj.execute("select * from links l, ratings r, metas m where l.movieId=r.movieId and l.imdbId=m.imdbId")
-    # cursorObj.execute("select m.title, avg(r.rating) avg_rating from links l, ratings r, metas m where l.movieId=r.movieId and l.imdbId=m.imdbId group by m.title having count(r.rating) > 2 and avg_rating > 4.5 ")
+    #cursorObj.execute("select * from links l, ratings r, metas m where l.movieId=r.movieId and l.imdbId=m.imdbId")
+    cursorObj.execute("select m.title, avg(r.rating) avg_rating, count(r.rating) from links l, ratings r, metas m where l.movieId=r.movieId and l.imdbId=m.imdbId group by m.title having count(r.rating) > 2 and avg_rating > 4.5 ")
     rows = cursorObj.fetchall()
     for c,row in enumerate(rows):
         print('sql join count: '+str(row))
@@ -87,7 +87,7 @@ def join():
             break
 
 if __name__ == "__main__":
-    create(memory=True)
+    create(memory=False)
     index()
     join()
     join()

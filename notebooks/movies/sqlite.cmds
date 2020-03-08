@@ -1,0 +1,6 @@
+
+.eqp on
+.stats on
+.timer on
+
+PRAGMA index_list('links') 
