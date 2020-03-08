@@ -86,32 +86,33 @@ def sqlite_load():
 def sqlite_join():
     pass
 
-files = ["links.csv", "ratings.csv","movies_metadata.csv"]
+if __name__ == "__main__":
+    files = ["links.csv", "ratings_small.csv","movies_metadata.csv"]
 
-# load files
-links = load_file(files[0])
-ratings = load_file(files[1])
-metas = load_file(files[2])
+    # load files
+    links = load_file(files[0])
+    ratings = load_file(files[1])
+    metas = load_file(files[2])
 
-# manual merge -- takes a LONG time
-# newlinks = merge(links, ratings, metas)
-# print_head(newlinks)
+    # manual merge -- takes a LONG time
+    # newlinks = merge(links, ratings, metas)
+    # print_head(newlinks)
 
-# manual w/ maps
-newlinks_wmap = merge_wmap(links, ratings, metas)
-print_head(newlinks_wmap)
-print(len(newlinks_wmap))
+    # manual w/ maps
+    newlinks_wmap = merge_wmap(links, ratings, metas)
+    print_head(newlinks_wmap)
+    print(len(newlinks_wmap))
 
-# load pandas dfs
-links_df = load_df(files[0])
-ratings_df = load_df(files[1])
-metas_df = load_df(files[2])
+    # load pandas dfs
+    links_df = load_df(files[0])
+    ratings_df = load_df(files[1])
+    metas_df = load_df(files[2])
 
-# using pandas merge
-merged_df = pandas_join(links_df, ratings_df, metas_df)
-print(merged_df.head())
-print(merged_df.shape)
+    # using pandas merge
+    merged_df = pandas_join(links_df, ratings_df, metas_df)
+    print(merged_df.head())
+    print(merged_df.shape)
 
-# using sqlite
+    # using sqlite
 
 
