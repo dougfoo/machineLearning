@@ -87,7 +87,7 @@ def join():
             break
 
 if __name__ == "__main__":
-    create(memory=False)
+    create(memory=True)
     index()
     join()
     join()
