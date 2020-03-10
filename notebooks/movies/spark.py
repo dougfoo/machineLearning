@@ -39,38 +39,35 @@ def group_by(df_joined):
     return df_joined.groupBy('title').agg(func.mean('rating').alias('avg_rating'),func.count('rating').\
         alias('r_count')).filter('r_count >2').filter('avg_rating > 4.5')
 
+@timeit
+def main(executors, partitions=100, join_type=join):
+    df_links, df_ratings, df_metas = load_files("links.csv", "ratings_12x.csv","movies_metadata.csv")
+    df_ratings = df_ratings.repartition(partitions, 'movieId')
+    df_joined = join_type(df_ratings, df_links, df_metas, 'movieId','movieId','imdbId','imdb_id')
+    group_by(df_joined).show()
+    print('executors: '+str(executors)+', partitions: '+str(df_ratings.rdd.getNumPartitions())+', join: '+str(join_type))
 
 if __name__ == "__main__":
     global sc, spark
+    executors = 8
     # conf = SparkConf().setMaster('spark://192.168.1.107:7077').setAppName('sparkJoinDemo')
-    conf = SparkConf().setMaster('local[4]').setAppName('sparkJoinDemoLocal')
+    conf = SparkConf().setMaster('local['+str(executors)+']').setAppName('sparkJoinDemoLocal')
     sc = SparkContext(conf=conf)
     spark = SparkSession.builder.getOrCreate()
     spark.conf.set("spark.sql.execution.arrow.enabled", "true")
-    spark.conf.set("spark.executor.memory","16g")
-    spark.conf.set("spark.driver.memory","16g")
+    # spark.conf.set("spark.executor.memory","16g")  using _JAVA_OPTIONS="-Xmx6g -Xms512M" instead for client runtime
+    # spark.conf.set("spark.driver.memory","16g")
     spark.conf.set("spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation","true")
 
-    df_links, df_ratings, df_metas = load_files("links.csv", "ratings.csv","movies_metadata.csv")
-    print(df_ratings.rdd.getNumPartitions())
-    df_ratings = df_ratings.repartition(10, 'rating')
+    main(executors,4, join_b)
+    main(executors,4, join)
 
-    # spark.sql("show tables").show()
-    # df_links.write.mode("overwrite").saveAsTable("links")
-    # df_ratings.write.mode("overwrite").saveAsTable("ratings")
-    # df_metas.write.mode("overwrite").saveAsTable("metas")
-    # spark.sql("show tables").show()
+    main(executors,6, join_b)
+    main(executors,6, join)
 
-    # spark.sql("select 'links', count(*) from links").show()
-    # spark.sql("select 'ratings', count(*) from ratings").show()
-    # spark.sql("select 'metas', count(*) from metas").show()
+    main(executors,8, join_b)
+    main(executors,8, join)
 
-    df_joined = join(df_ratings, df_links, df_metas, 'movieId','movieId','imdbId','imdb_id')
-    group_by(df_joined).show()
-
-    df_joined = join_b(df_ratings, df_links, df_metas, 'movieId','movieId','imdbId','imdb_id')
-    group_by(df_joined).show()
-
-
-
+    main(executors,10, join_b)
+    main(executors,10, join)
 

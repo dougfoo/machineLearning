@@ -6,6 +6,7 @@ from typing import Tuple
 import pandas as pd
 
 def timeit(method):
+    @wraps(method)
     def timed(*args, **kw):
         ts = time()
         result = method(*args, **kw)
@@ -87,12 +88,6 @@ def pandas_join_group(links_df, ratings_df, metas_df) -> pd.DataFrame:
     grouped_df = merged_df[['title','rating']].groupby('title').agg(Mean=('rating', 'mean' ), Count=('rating','count')).query('Mean > 4.5 and Count > 2')
     return grouped_df
 
-def sqlite_load():
-    pass
-
-def sqlite_join():
-    pass
-
 if __name__ == "__main__":
     files = ["links.csv", "ratings.csv","movies_metadata.csv"]
 
@@ -101,7 +96,7 @@ if __name__ == "__main__":
     ratings = load_file(files[1])
     metas = load_file(files[2])
 
-    # manual merge -- takes a LONG time
+    # # manual merge -- takes a LONG time
     # newlinks = merge(links, ratings, metas)
     # print_head(newlinks)
 
@@ -116,9 +111,9 @@ if __name__ == "__main__":
     metas_df = load_df(files[2])
 
     # using pandas merge to build full table
-    # merged_df = pandas_join(links_df, ratings_df, metas_df)
-    # print(merged_df.head())
-    # print(merged_df.shape)
+    merged_df = pandas_join(links_df, ratings_df, metas_df)
+    print(merged_df.head())
+    print(merged_df.shape)
 
     # group by having in pandas
     grouped_df = pandas_join_group(links_df, ratings_df, metas_df)

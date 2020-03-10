@@ -10,6 +10,16 @@ spark = SparkSession.builder.getOrCreate()
 # spark.conf.set("spark.sql.execution.arrow.enabled", "true")
 # spark.conf.set("spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation","true")
 
+# spark.sql("show tables").show()
+# df_links.write.mode("overwrite").saveAsTable("links")
+# df_ratings.write.mode("overwrite").saveAsTable("ratings")
+# df_metas.write.mode("overwrite").saveAsTable("metas")
+# spark.sql("show tables").show()
+
+# spark.sql("select 'links', count(*) from links").show()
+# spark.sql("select 'ratings', count(*) from ratings").show()
+# spark.sql("select 'metas', count(*) from metas").show()
+
 # df = spark.createDataFrame([[1],[2]])
 # df.write.saveAsTable('footable5')
 
