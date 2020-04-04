@@ -1,6 +1,11 @@
 *.pyc
-__pycache__/*
-tf_logs/*
-.ipynb_checkpoints/*
+__pycache__/**
+tf_logs/**
+.ipynb_checkpoints/**
 .vscode/settings.json
 .pytest_cache/**
+**/*.parquet
+**/*.parquet.*
+**/*.crc
+**/derby.log
+covid/COVID-19/**
