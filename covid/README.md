@@ -7,6 +7,6 @@ Main data sources are USAfacts.org and John Hopkins University (Global)
 
 [Main Working NB - Global JH](COVID-global-working.ipynb)
 
-[Beta Working NB - Clustering Analysis JH](COVID-global-clustering.ipynb.ipynb) 
+[Beta Working NB - Clustering Analysis JH](COVID-global-clustering.ipynb) 
 
 
